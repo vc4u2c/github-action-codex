@@ -1,5 +1,5 @@
 // Rehearse the lifecycle in a dedicated workspace; never reset the real app checkout.
-import { mkdir, readFile, writeFile, lstat, realpath } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, lstat, realpath, readdir, unlink } from 'node:fs/promises';
 import { resolve, join, dirname, sep } from 'node:path';
 import { git, run, npmCommand } from '../lib/process.mjs';
 import { demoTarget, isDemoPath } from '../lib/demo-reset.mjs';
@@ -25,6 +25,28 @@ if (mode === 'reset') {
   const safe = ['-c', 'safe.directory=' + source.replaceAll('\\', '/')];
   const paths = (await git([...safe, 'ls-tree', '-r', '--name-only', target.demo.baselineCommit], gitOptions)).split('\n').filter(isDemoPath);
   if (!paths.includes('package.json') || !paths.includes('package-lock.json')) throw new Error('Missing baseline manifests');
+  const expected = new Set(paths);
+  async function removeExtraDemoFiles(directory) {
+    let entries;
+    try { entries = await readdir(join(workspace, directory), { withFileTypes: true }); }
+    catch (error) { if (error.code === 'ENOENT') return; throw error; }
+    for (const entry of entries) {
+      const relative = directory + '/' + entry.name;
+      if (entry.isSymbolicLink()) throw new Error('Refusing to traverse a symlink in the demo workspace');
+      if (entry.isDirectory()) await removeExtraDemoFiles(relative);
+      else if (!expected.has(relative)) {
+        const file = resolve(workspace, relative);
+        if (!file.startsWith(workspace + sep)) throw new Error('Reset path escapes demo workspace');
+        await unlink(file);
+      }
+    }
+  }
+  for (const directory of ['src', 'test']) {
+    try {
+      if ((await lstat(join(workspace, directory))).isSymbolicLink()) throw new Error('Demo source/test directory must not be a symlink');
+    } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    await removeExtraDemoFiles(directory);
+  }
   for (const path of paths) {
     const file = resolve(workspace, path);
     if (!file.startsWith(workspace + sep)) throw new Error('Baseline path escapes demo workspace');

@@ -2,8 +2,10 @@
 
 A two-repository demonstration of centralized dependency scanning and Codex-assisted remediation.
 
+**[Live dashboard](https://vc4u2c.github.io/github-action-codex/) ? [Vulnerability register](https://github.com/vc4u2c/github-action-codex/issues?q=label%3Avulnerability-register) ? [Repeatable demo runbook](docs/demo-runbook.md)**
+
 - **This repository:** scanner, GitHub Issues register, dashboard, remediation skill, and orchestration.
-- **[vulnerable-node-demo](https://github.com/vc4u2c/vulnerable-node-demo):** the application, its tests, and remediation PRs. This link becomes available after publishing the companion repository.
+- **[vulnerable-node-demo](https://github.com/vc4u2c/vulnerable-node-demo):** the application, its tests, and remediation PRs.
 
 The hub uses Node.js built-ins; it has no application dependencies. The dashboard is static HTML/CSS/JavaScript generated from the register.
 
