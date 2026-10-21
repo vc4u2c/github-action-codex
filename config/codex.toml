@@ -1,0 +1,19 @@
+default_permissions = "remediation"
+web_search = "disabled"
+
+[features]
+network_proxy = true
+
+[permissions.remediation]
+extends = ":workspace"
+
+[permissions.remediation.filesystem.":workspace_roots"]
+".github" = "read"
+
+[permissions.remediation.network]
+enabled = true
+
+[permissions.remediation.network.domains]
+"registry.npmjs.org" = "allow"
+"localhost" = "allow"
+"127.0.0.1" = "allow"

@@ -1,0 +1,7 @@
+node_modules/
+artifacts/
+site/
+.work/
+.env*
+*.log
+.npm-cache/

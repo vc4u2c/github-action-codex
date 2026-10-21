@@ -1,0 +1,14 @@
+{
+  "resolvedAt": "2026-10-21T12:32:19.618Z",
+  "codex": "0.163.0",
+  "actions": {
+    "actions/checkout@v4": "11d5960a326750d5838078e36cf38b85af677262",
+    "actions/setup-node@v4": "49933ea5288caeca8642d1e84afbd3f7d6820020",
+    "actions/create-github-app-token@v2": "fee1f7d63c2ff003460e3d139729b119787bc349",
+    "actions/upload-artifact@v4": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+    "actions/upload-pages-artifact@v3": "56afc609e74202658d3ffba0e8f6dda462b719fa",
+    "actions/deploy-pages@v4": "d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e",
+    "actions/download-artifact@v4": "d3f86a106a0bac45b974a628896c90dbdf5c8093",
+    "openai/codex-action@v1": "bdf19a4a223ec2549a3e2274a0cf61556bc07675"
+  }
+}

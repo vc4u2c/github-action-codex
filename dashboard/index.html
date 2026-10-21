@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vulnerability Hub</title><link rel="stylesheet" href="style.css"><script src="app.js" defer></script></head>
+<body><main>
+<header><div class="brand"><span class="mark">VH</span><span>Vulnerability Hub</span></div><span id="mode" class="pill">Loading</span></header>
+<section class="intro"><div><p class="eyebrow">SECURITY OPERATIONS</p><h1>A clear path from<br>finding to fix.</h1><p class="muted">Track exposure, review remediation, and verify every resolution.</p></div>
+<div class="sync"><span class="dot"></span><span id="updated">Loading register…</span></div></section>
+<div id="error" role="alert" hidden></div>
+<section class="stats" aria-label="Register totals" id="stats"></section>
+<section class="panel"><div class="panel-heading"><div><h2>Monitored repositories</h2><p class="muted">Latest scan evidence and coverage</p></div><a href="register.json" download>Export register ↗</a></div><div id="targets"></div></section>
+<section class="panel"><div class="panel-heading"><div><h2>Vulnerability register</h2><p class="muted">Findings remain open until a successful rescan confirms the fix.</p></div><span id="count" class="pill"></span></div>
+<div class="filters"><label class="search">Search<input id="search" type="search" placeholder="Package, advisory, repository…"></label><label>Status<select id="status"><option value="">All statuses</option><option value="active">Active findings</option><option value="open">Open</option><option value="pr-open">PR open</option><option value="awaiting-verification">Awaiting verification</option><option value="resolved">Resolved</option></select></label><label>Severity<select id="severity"><option value="">All severities</option><option>critical</option><option>high</option><option>moderate</option><option>low</option><option>info</option></select></label></div>
+<div class="table-wrap"><table><thead><tr><th>Finding</th><th>Severity</th><th>Repository</th><th>Status</th><th>First seen / resolved</th><th>Links</th></tr></thead><tbody id="findings"></tbody></table></div><p id="empty" hidden>No findings match these filters.</p></section>
+<footer>Detect → Register → Remediate → Review → Verify<span>Powered by npm audit · GitHub Actions · Codex</span></footer>
+</main></body></html>

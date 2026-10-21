@@ -1,0 +1,16 @@
+{
+  "name": "vulnerability-hub",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "demo": "node scripts/local-demo.mjs",
+    "dashboard": "node scripts/serve.mjs",
+    "scan": "node scripts/scan.mjs",
+    "configure": "node scripts/configure.mjs"
+  }
+}

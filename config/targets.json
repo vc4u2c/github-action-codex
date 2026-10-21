@@ -1,0 +1,10 @@
+{
+  "targets": [
+    {
+      "id": "node-demo",
+      "repository": "vc4u2c/vulnerable-node-demo",
+      "directory": ".",
+      "ecosystem": "npm"
+    }
+  ]
+}

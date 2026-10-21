@@ -1,0 +1,230 @@
+name: Remediate vulnerability
+on:
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: Central vulnerability register issue number
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: vulnerability-hub-register
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      actions: write
+    outputs:
+      ready: ${{ steps.prepare.outputs.ready }}
+      repository: ${{ steps.prepare.outputs.repository }}
+      sha: ${{ steps.prepare.outputs.sha }}
+      owner: ${{ steps.targets.outputs.owner }}
+      repositories: ${{ steps.targets.outputs.repositories }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - id: targets
+        run: node scripts/target-outputs.mjs
+      - id: app
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.HUB_APP_ID }}
+          private-key: ${{ secrets.HUB_APP_PRIVATE_KEY }}
+          owner: ${{ steps.targets.outputs.owner }}
+          repositories: ${{ steps.targets.outputs.repositories }}
+          permission-contents: read
+          permission-pull-requests: read
+      - id: prepare
+        run: node scripts/prepare-remediation.mjs
+        env:
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          GITHUB_TOKEN: ${{ github.token }}
+          TARGET_TOKEN: ${{ steps.app.outputs.token }}
+      - if: steps.prepare.outputs.ready == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: remediation-context
+          path: |
+            .work/context.json
+            .work/prompt.md
+          include-hidden-files: true
+          if-no-files-found: error
+      - if: steps.prepare.outputs.ready == 'true'
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ steps.prepare.outputs.repository }}
+          ref: ${{ steps.prepare.outputs.sha }}
+          token: ${{ steps.app.outputs.token }}
+          path: target-checkout
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Package immutable target history
+        if: steps.prepare.outputs.ready == 'true'
+        run: git -C target-checkout bundle create "$GITHUB_WORKSPACE/baseline.bundle" HEAD
+      - if: steps.prepare.outputs.ready == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: target-baseline
+          path: baseline.bundle
+          if-no-files-found: error
+  propose:
+    needs: prepare
+    if: needs.prepare.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: hub
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: remediation-context
+          path: context
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: target-baseline
+          path: baseline
+      - name: Restore audited target commit without credentials
+        shell: bash
+        run: |
+          git init target
+          git -C target fetch ../baseline/baseline.bundle HEAD
+          git -C target checkout --detach FETCH_HEAD
+      - name: Install trusted skill and permission profile
+        shell: bash
+        run: |
+          mkdir -p "$HOME/.agents/skills/remediate-vulnerability" "$RUNNER_TEMP/remediation-codex"
+          cp hub/.agents/skills/remediate-vulnerability/SKILL.md "$HOME/.agents/skills/remediate-vulnerability/SKILL.md"
+          cp hub/config/codex.toml "$RUNNER_TEMP/remediation-codex/config.toml"
+      - name: Run Codex with the remediation skill
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          working-directory: target
+          prompt-file: context/prompt.md
+          codex-home: ${{ runner.temp }}/remediation-codex
+          codex-version: '0.163.0'
+          permission-profile: remediation
+          safety-strategy: drop-sudo
+          model: ${{ vars.CODEX_MODEL }}
+      # Only package the untrusted output here. Validation/publishing use fresh runners.
+      - name: Capture proposed patch
+        shell: bash
+        run: |
+          git -C target -c core.hooksPath=/dev/null add -N .
+          git -C target -c core.hooksPath=/dev/null diff --binary HEAD > proposal.patch
+          test -s proposal.patch
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: remediation-proposal
+          path: proposal.patch
+          if-no-files-found: error
+  verify:
+    needs: [prepare, propose]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: hub
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: remediation-context
+          path: context
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: remediation-proposal
+          path: proposal
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: target-baseline
+          path: baseline
+      - name: Restore audited target commit without credentials
+        shell: bash
+        run: |
+          git init target
+          git -C target fetch ../baseline/baseline.bundle HEAD
+          git -C target checkout --detach FETCH_HEAD
+      - name: Validate patch, tests, and fresh audit
+        working-directory: hub
+        run: node scripts/verify-remediation.mjs ../context/context.json ../target ../proposal/proposal.patch ../verification.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: remediation-verification
+          path: verification.json
+          if-no-files-found: error
+  publish:
+    needs: [prepare, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      actions: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          path: hub
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: remediation-context
+          path: context
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: remediation-proposal
+          path: proposal
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: remediation-verification
+          path: verification
+      - id: app
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.HUB_APP_ID }}
+          private-key: ${{ secrets.HUB_APP_PRIVATE_KEY }}
+          owner: ${{ needs.prepare.outputs.owner }}
+          repositories: ${{ needs.prepare.outputs.repositories }}
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: target-baseline
+          path: baseline
+      - name: Restore audited target commit without credentials
+        shell: bash
+        run: |
+          git init target
+          git -C target fetch ../baseline/baseline.bundle HEAD
+          git -C target checkout --detach FETCH_HEAD
+      - name: Publish verified files and open target PR
+        working-directory: hub
+        run: node scripts/publish-remediation.mjs ../context/context.json ../target ../proposal/proposal.patch ../verification/verification.json
+        env:
+          TARGET_TOKEN: ${{ steps.app.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}
