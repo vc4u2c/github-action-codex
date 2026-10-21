@@ -57,6 +57,8 @@ jobs:
           path: |
             .work/context.json
             .work/prompt.md
+            .work/SKILL.md
+            .work/skill.json
           include-hidden-files: true
           if-no-files-found: error
       - if: steps.prepare.outputs.ready == 'true'
@@ -118,11 +120,20 @@ jobs:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           working-directory: target
           prompt-file: context/prompt.md
+          output-file: ${{ github.workspace }}/codex-report.md
+          codex-args: '["--json"]'
           codex-home: ${{ runner.temp }}/remediation-codex
           codex-version: '0.163.0'
           permission-profile: remediation
           safety-strategy: drop-sudo
           model: ${{ vars.CODEX_MODEL }}
+      - name: Preserve Codex final report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: codex-report
+          path: codex-report.md
+          if-no-files-found: warn
       # Only package the untrusted output here. Validation/publishing use fresh runners.
       - name: Capture proposed patch
         shell: bash

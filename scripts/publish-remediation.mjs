@@ -40,6 +40,8 @@ const pr = prs[0] || await source.post(root + '/pulls', {
   head: context.branch, base: context.base,
   body: 'Addresses central register entry ' + context.issueUrl + '.\n\n' +
     'Codex applied the central remediation skill to the dependency finding at commit ' + context.sha + '.\n\n' +
+    'Skill: ' + context.skill.name + ' (`' + context.skill.sha256 + '`). ' +
+    'Inspect the workflow logs for the skill-read command; the remediation-context and codex-report artifacts preserve the supplied instructions and final response.\n\n' +
     'Independent validation: npm ci succeeded with lifecycle scripts disabled; application tests passed; ' +
     'a fresh npm audit confirmed the selected advisory is absent and introduced no new advisory keys.\n\n' +
     'Other existing findings may remain. Review the dependency and source diff before merging. ' +

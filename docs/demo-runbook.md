@@ -49,3 +49,11 @@ Only targets with an explicit demo.baselineCommit can be reset. Ordinary scan ta
 Dependency versions and application files return to the same baseline each time. Advisory counts and severity still follow the live npm advisory database; they are not fixed demo data. The pinned baseline commit must remain in the target repository's history.
 
 If you intentionally replace the demo application, choose a new known vulnerable baseline commit and update config/targets.json. The local workspace marker prevents silently mixing baselines; use a separately named rehearsal workspace or archive the old .work/demo-target before initializing the new baseline.
+
+## Show the skill in the run logs
+
+Open **Remediate vulnerability > the run > propose > Run Codex with the remediation skill**. Codex emits JSON events containing its commands and their output. Find the completed `read-remediation-skill.mjs` command and its `SKILL_READ name=remediate-vulnerability sha256=...` output, then inspect the dependency update and test commands that follow it. The prompt requires this read before edits; check the actual command event rather than treating a mention of the skill as proof of execution.
+
+The prepare job logs `SKILL_CONFIGURED` and adds a run summary with an immutable link to the skill and its SHA-256. Its **remediation-context** artifact includes `SKILL.md`, `skill.json`, `prompt.md`, and `context.json`. The exact skill text is also included in the prompt sent to Codex. The **codex-report** artifact preserves Codex's final response, including the skill version and its account of the changes and tests. If Codex fails before a final response, inspect the Action logs; there may be no report artifact.
+
+These records show the instructions supplied and observable tool activity. A claimed skill name alone does not prove compliance with every instruction. The separate verify job still determines whether the patch passes tests and removes the advisory.
