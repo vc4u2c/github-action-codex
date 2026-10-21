@@ -2,19 +2,19 @@
 
 ## 1. Publish the repositories
 
-The intended repositories are **vc4u2c/github-action-codex** and **vc4u2c/vulnerable-node-demo**, with **main** as the default branch. Both are independent repositories.
+The public demo repositories are **[vc4u2c/github-action-codex](https://github.com/vc4u2c/github-action-codex)** and **[vc4u2c/vulnerable-node-demo](https://github.com/vc4u2c/vulnerable-node-demo)**, with **main** as the default branch. Both are published and independent. The [dashboard](https://vc4u2c.github.io/github-action-codex/) is live and the initial scan has populated the register. Continue at step 2 to enable remediation and reset PRs.
 
-If publishing yourself, authenticate the GitHub CLI, then run the following from each corresponding folder after committing its files:
+For a separate installation, replace the owner/repository names below, authenticate the GitHub CLI, then run the following from each corresponding folder after committing its files:
 
 ```sh
 gh auth login -h github.com
 # From github-action-codex:
-gh repo create vc4u2c/github-action-codex --private --source=. --remote=origin --push
+gh repo create vc4u2c/github-action-codex --public --source=. --remote=origin --push
 # From vulnerable-node-demo:
-gh repo create vc4u2c/vulnerable-node-demo --private --source=. --remote=origin --push
+gh repo create vc4u2c/vulnerable-node-demo --public --source=. --remote=origin --push
 ```
 
-These commands create private repositories. If you choose public repositories, all checked-in files and vulnerability issues will be publicly readable. Keep the demo app local; publishing its source does not require hosting the vulnerable application.
+These commands create public repositories, matching this demo. All checked-in files and vulnerability issues are publicly readable. Use --private instead if your installation needs private repositories. Keep the demo app local; publishing its source does not require hosting the vulnerable application.
 
 Enable Issues in the hub and GitHub Actions in both repositories. Keep the hub workflow and configuration changes limited to trusted maintainers.
 
