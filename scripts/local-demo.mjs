@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { loadTargets } from '../lib/config.mjs';
@@ -5,7 +6,7 @@ import { auditLocal } from '../lib/audit.mjs';
 import { reconcile } from '../lib/register.mjs';
 import { buildDashboard, markdownSummary } from '../lib/dashboard.mjs';
 const target = (await loadTargets())[0];
-const directory = resolve(process.argv[2] || '../vulnerable-node-demo', target.directory);
+const directory = resolve(process.argv[2] || (existsSync('.work/demo-target/.demo-workspace.json') ? '.work/demo-target' : '../vulnerable-node-demo'), target.directory);
 await mkdir('artifacts', { recursive: true });
 let previous = [];
 try { previous = JSON.parse(await readFile('artifacts/local-register.json', 'utf8')).findings; }

@@ -6,7 +6,7 @@ import { reconcile, readRegister, refreshPullRequests, saveRegister } from '../l
 import { buildDashboard, markdownSummary } from '../lib/dashboard.mjs';
 const hub = process.env.GITHUB_REPOSITORY;
 if (!hub) throw new Error('GITHUB_REPOSITORY must identify the central hub');
-const source = new GitHub(process.env.TARGET_TOKEN);
+const source = new GitHub(process.env.TARGET_TOKEN, fetch, { allowAnonymous: true });
 const register = new GitHub(process.env.GITHUB_TOKEN);
 const targets = await loadTargets();
 const previous = await readRegister(register, hub);

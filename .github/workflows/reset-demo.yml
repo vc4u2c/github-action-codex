@@ -1,0 +1,46 @@
+name: Reset demo
+on:
+  workflow_dispatch:
+    inputs:
+      target_id:
+        description: Demo target with an explicitly configured baseline commit
+        required: true
+        default: node-demo
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: vulnerability-hub-register
+  cancel-in-progress: false
+jobs:
+  reset:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - id: targets
+        run: node scripts/target-outputs.mjs
+      - id: app
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.HUB_APP_ID }}
+          private-key: ${{ secrets.HUB_APP_PRIVATE_KEY }}
+          owner: ${{ steps.targets.outputs.owner }}
+          repositories: ${{ steps.targets.outputs.repositories }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Open or reuse the reset PR
+        run: node scripts/reset-demo.mjs
+        env:
+          TARGET_ID: ${{ inputs.target_id }}
+          TARGET_TOKEN: ${{ steps.app.outputs.token }}
+          GITHUB_TOKEN: ${{ github.token }}

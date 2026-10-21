@@ -114,3 +114,13 @@ test('validation rejects an unfixed advisory or newly introduced advisory', () =
   assert.throws(() => assertRemediated(context, [finding]), /still present/);
   assert.throws(() => assertRemediated(context, [{ ...finding, key: 'new' }]), /new advisory/);
 });
+
+test('public scanning permits anonymous reads but never anonymous mutations', async () => {
+  const api = new GitHub(undefined, async (url, options) => {
+    assert.equal(options.headers.Authorization, undefined);
+    return { ok: true, status: 200, json: async () => ({ default_branch: 'main' }) };
+  }, { allowAnonymous: true });
+  assert.deepEqual(await api.get('/repos/owner/public'), { default_branch: 'main' });
+  await assert.rejects(api.post('/repos/owner/public/issues', {}), /read-only/);
+  assert.throws(() => new GitHub(undefined), /Missing/);
+});

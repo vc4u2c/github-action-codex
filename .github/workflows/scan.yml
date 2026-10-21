@@ -26,6 +26,7 @@ jobs:
       - id: targets
         run: node scripts/target-outputs.mjs
       - name: Mint read-only target token
+        if: vars.HUB_APP_ID != ''
         id: app
         uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
         with:

@@ -18,6 +18,8 @@ These commands create private repositories. If you choose public repositories, a
 
 Enable Issues in the hub and GitHub Actions in both repositories. Keep the hub workflow and configuration changes limited to trusted maintainers.
 
+Public targets can be scanned immediately without a GitHub App: the scanner uses read-only anonymous GitHub requests when HUB_APP_ID is unset. The hub's built-in workflow token maintains its register. Configure the App for private targets, higher API limits, remediation PRs, and reset PRs.
+
 ## 2. Create the hub GitHub App
 
 Under your GitHub account's Developer settings, create a GitHub App. Set a homepage URL to the hub repository; a webhook is unnecessary for this demo.
@@ -104,6 +106,10 @@ Review the PR and its **Application CI / test** result. Configure branch protect
 After merge, the notifier dispatches a scan of the target default branch. The register entry closes only if the advisory is absent. Other findings remain open. Reverting the dependency update reopens the existing entry on the next scan.
 
 An already open remediation PR is reused; a closed unmerged PR allows a new attempt. A failed or empty Codex proposal creates no PR and leaves the finding open; details remain in the workflow run.
+
+## Repeat without recreating repositories
+
+Run **Reset demo** in the hub with target_id=node-demo after completing a remediation demonstration. Review and merge the reset PR; the central scanner will reopen the same finding issues. Reset preserves the GitHub configuration, issue history, and application workflows. See [the repeatable demo runbook](demo-runbook.md) for both local rehearsal and the GitHub presentation sequence.
 
 ## 7. Optional hosted dashboard
 

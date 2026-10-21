@@ -4,7 +4,10 @@
       "id": "node-demo",
       "repository": "vc4u2c/vulnerable-node-demo",
       "directory": ".",
-      "ecosystem": "npm"
+      "ecosystem": "npm",
+      "demo": {
+        "baselineCommit": "173e2720f075cb0a232b784c82ee4bb123da5fbb"
+      }
     }
   ]
 }

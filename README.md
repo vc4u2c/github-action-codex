@@ -62,6 +62,12 @@ node scripts/verify-demo.mjs
 
 This upgrades minimist only in an ignored temporary workspace, runs the same verification script used in CI, and saves evidence to artifacts/integration-verification.json. The original demo remains vulnerable.
 
+## Repeat the demonstration
+
+Run **npm run demo:reset**, **npm run demo:fix**, then **npm run demo:reset** to rehearse open/resolved/reopened findings in an isolated local workspace. Refresh the dashboard after each command. The original application checkout stays unchanged.
+
+For the live GitHub demo, run the hub's **Reset demo** workflow and merge its reset PR. A rescan reopens the existing issues. See **[docs/demo-runbook.md](docs/demo-runbook.md)** for the presentation sequence and reset behavior.
+
 ## GitHub setup
 
 Follow **[docs/setup.md](docs/setup.md)** to publish both repositories, configure GitHub App credentials, enable the dashboard, and run the demo. The configured owner is vc4u2c; change it with:
@@ -74,6 +80,7 @@ npm run configure -- YOUR_OWNER
 | --- | --- | --- |
 | Scan and reconcile register | Manual, every six hours, or dispatched after a target default-branch push | Audits allowlisted targets, updates central issues, exports evidence and dashboard |
 | Remediate vulnerability | Manual; supply a central issue number | Fresh scan → Codex proposal → independent tests/audit → target PR |
+| Reset demo | Manual; configured demo target only | Opens a PR restoring the vulnerable baseline for the next demonstration |
 | Hub CI | Push/PR | Runs register, audit, API, and patch-gate tests |
 | Application CI (target repo) | Push/PR | Tests the app; a separate job notifies the hub after a default-branch push |
 

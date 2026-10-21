@@ -11,6 +11,8 @@
     "demo": "node scripts/local-demo.mjs",
     "dashboard": "node scripts/serve.mjs",
     "scan": "node scripts/scan.mjs",
-    "configure": "node scripts/configure.mjs"
+    "configure": "node scripts/configure.mjs",
+    "demo:reset": "node scripts/local-demo-cycle.mjs reset",
+    "demo:fix": "node scripts/local-demo-cycle.mjs fix"
   }
 }
