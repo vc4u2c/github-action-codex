@@ -61,3 +61,14 @@ These records show the instructions supplied and observable tool activity. A cla
 ## Runner compatibility
 
 The four remediation jobs explicitly use `ubuntu-24.04`. During the `ubuntu-latest` migration, [run 40802770824](https://github.com/vc4u2c/github-action-codex/actions/runs/40802770824) received Ubuntu 26.04 and the pinned Codex Action stopped before making a model request: `Could not restrict access to /run/dbus/system_bus_socket`. Pinning the OS preserves the existing `drop-sudo` protection. Revalidate that protection before changing the runner OS or Action version. The OS label still receives GitHub image updates; it does not pin an immutable VM image.
+
+## Verified live example
+
+On October 28, 2026 (America/Chicago), [run 40803030409](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409) completed all four jobs using `gpt-6-luna` and created [application PR #1](https://github.com/vc4u2c/vulnerable-node-demo/pull/1). It updates minimist 1.2.5 to 1.2.8 in the two manifests; source and tests are unchanged.
+
+- [Codex job logs](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409/job/123215431165): the completed `read-remediation-skill.mjs` command returned exit code 0 and `SKILL_READ` with the configured skill hash.
+- [Independent verifier](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409/job/123215869300): both application tests passed, the selected advisory was absent, and no new advisory identities appeared. Five existing lodash advisories remain.
+- [Application PR CI](https://github.com/vc4u2c/vulnerable-node-demo/actions/runs/40803240449): passed.
+- [Register issue #6](https://github.com/vc4u2c/github-action-codex/issues/6) and the published dashboard: `pr-open`, linked to PR #1. Merge and rescan remain the next demonstration steps.
+
+The Codex report records two HTTP-test socket failures inside the propose environment. The separate verifier and application CI passed those unchanged tests. The run artifacts preserve the report, proposal, skill/context, and verification receipt so this distinction is reviewable.

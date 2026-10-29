@@ -187,7 +187,7 @@ All register-writing hub workflows share one concurrency group. More npm reposit
 | Application tests and notifier | [Application `ci.yml`](https://github.com/vc4u2c/vulnerable-node-demo/blob/main/.github/workflows/ci.yml) |
 | Installation and credential setup | [`setup.md`](setup.md) |
 
-As of October 28, 2026, both GitHub Apps and the model variable are configured. The latest remediation attempt [reached Codex but stopped on an OpenAI API quota error](https://github.com/vc4u2c/github-action-codex/actions/runs/39623760844). A completed live fix/PR cycle has not yet been verified.
+As of October 28, 2026 (America/Chicago), the [Luna remediation run succeeded](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409) and created [application PR #1](https://github.com/vc4u2c/vulnerable-node-demo/pull/1), updating minimist from 1.2.5 to 1.2.8. The logs contain a completed skill-read command and matching `SKILL_READ` SHA-256. Independent verification passed both application tests and the advisory checks; application PR CI also passed. The register and dashboard show `pr-open`. Human merge and the subsequent scan are still required to demonstrate automatic closure. Five existing lodash advisories remain in the proposed tree.
 
 ## Updating the diagrams
 
