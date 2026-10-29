@@ -14,10 +14,10 @@ You can demonstrate the register, skill logs, verification, and PR review withou
 
 1. Open the [dashboard](https://vc4u2c.github.io/github-action-codex/) and choose **Request fix** on an open finding.
 2. Sign in to GitHub using an account with **write, maintain, or admin access to the hub**.
-3. On the finding's issue, tick **Request a Codex fix**. That issue edit starts **Remediate vulnerability** automatically.
-4. Follow the workflow link in the issue. The run is named with the register issue number. When verification passes, the issue and dashboard link to the proposed fix PR.
+3. On the **Remediate vulnerability** workflow page, click **Run workflow**. Keep the default branch selected, enter the issue number shown below the dashboard button, then click **Run workflow** to start.
+4. Follow the run named with that register issue number. When verification passes, the issue and dashboard link to the proposed fix PR.
 
-The checkbox requests a run; it does not merge a PR or resolve the finding. A scan may reset the checkbox, so use the Actions run to check progress. Ordinary issue edits and unticking the box do not request a fix; unticking also does not cancel a running job. If a run fails, use Actions to rerun it or clear and tick the box again. Manual **Run workflow** with the issue number remains available.
+Alternatively, open **Register #N** and tick **Request a Codex fix** on the issue. The checkbox requests a run; it does not merge a PR or resolve the finding. A scan may reset the checkbox, so use the Actions run to check progress. Ordinary issue edits and unticking the box do not request a fix; unticking also does not cancel a running job. If a run fails, use Actions to rerun it or clear and tick the box again. Manual **Run workflow** with the issue number remains available.
 
 Public visitors can browse findings. Only a maintainer with write access can start remediation. Findings with an open PR show **Review PR** instead of **Request fix**. For this presentation, keep minimist PR #1 open and show its completed run; choosing another open finding can start a new paid Codex run.
 
@@ -26,7 +26,7 @@ Public visitors can browse findings. Only a maintainer with write access can sta
 | Step | Action | What to show |
 | --- | --- | --- |
 | 1. Scan | In the hub's Actions tab, run **Scan and reconcile register** on main | Repository, severity, dates, status, and issue links in the dashboard |
-| 2. Remediate | Choose **Request fix** for an open finding and tick its GitHub issue checkbox | The separate prepare, propose, verify, and publish jobs |
+| 2. Remediate | Choose **Request fix**, then **Run workflow** with the displayed issue number | The separate prepare, propose, verify, and publish jobs |
 | 3. Show evidence | Open the propose and verify logs | Actual skill read, dependency edits, independent tests and audit |
 | 4. Review PR | Open the application PR and its checks | The dependency diff and link back to the central register |
 | 5. Merge when ready | Review and merge the PR | Default-branch CI and the separate `notify-hub` job |

@@ -32,7 +32,7 @@ The hub owns the workflows, GitHub Issues register, dashboard, and remediation s
 
 ## Request a fix
 
-On the [dashboard](https://vc4u2c.github.io/github-action-codex/), choose **Request fix**, then tick **Request a Codex fix** on the finding's GitHub issue. You need write access to the hub. The workflow checks authorization, runs Codex and independent verification, and opens a PR for review. Findings that already have an open fix show **Review PR**.
+On the [dashboard](https://vc4u2c.github.io/github-action-codex/), choose **Request fix** to open GitHub Actions. Click **Run workflow**, enter the issue number shown below the dashboard button, and click **Run workflow** to start. The issue checkbox remains available as an alternative. You need write access to the hub. The workflow checks authorization, runs Codex and independent verification, and opens a PR for review. Findings that already have an open fix show **Review PR**.
 
 ## Try the local rehearsal
 

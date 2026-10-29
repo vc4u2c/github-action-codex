@@ -15,7 +15,7 @@ These steps reproduce the two-repository installation. The existing `vc4u2c` dem
 | OpenAI API key | Hub Actions secret |
 | GitHub Pages | Hub dashboard, optional |
 
-The dashboard's **Request fix** link opens the finding's GitHub issue. Ticking **Request a Codex fix** starts the workflow when the requester has write, maintain, or admin access to the hub. This uses the existing workflow token and requires no additional App, secret, or website login integration. See the [register request steps](demo-runbook.md#request-a-fix-from-the-register).
+The dashboard's **Request fix** button opens the remediation workflow on GitHub. Click **Run workflow**, enter the register issue number shown below the button, and click **Run workflow** again. The requester needs write, maintain, or admin access to the hub. Ticking **Request a Codex fix** on the register issue remains an alternative. This uses the existing workflow token and requires no additional App, secret, or website login integration. See the [register request steps](demo-runbook.md#request-a-fix-from-the-register).
 
 ## 1. Prepare a new workspace
 

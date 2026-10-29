@@ -25,7 +25,7 @@ flowchart TB
 
 1. The hub scans the application's default branch using `npm audit`.
 2. It creates or updates a GitHub issue for each advisory and refreshes the dashboard.
-3. A maintainer clicks **Request fix** on the dashboard and ticks **Request a Codex fix** on its GitHub issue. The workflow checks write access before starting remediation. Codex uses the skill to propose a change; a separate job tests and audits it.
+3. A maintainer clicks **Request fix** on the dashboard, then uses GitHub's **Run workflow** button with the displayed register issue number. GitHub checks write access before starting remediation. The issue checkbox is an alternative trigger. Codex uses the skill to propose a change; a separate job tests and audits it.
 4. The publish job opens a PR in the application repository.
 5. A human reviews and merges it. The application's notifier requests another hub scan.
 

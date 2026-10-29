@@ -71,7 +71,7 @@ GitHub Issues is the source of truth. `site/register.json` and the dashboard are
 
 ## 5. The Codex harness and remediation skill
 
-The harness is the workflow plus the scripts that prepare input, run Codex, verify its output, and publish the PR. It runs entirely in GitHub Actions. A maintainer starts [`remediate.yml`](../.github/workflows/remediate.yml) by ticking **Request a Codex fix** on a register issue, reached through the dashboard's **Request fix** link. Manual workflow dispatch with an issue number remains supported.
+The harness is the workflow plus the scripts that prepare input, run Codex, verify its output, and publish the PR. It runs entirely in GitHub Actions. The dashboard's **Request fix** button opens [`remediate.yml`](../.github/workflows/remediate.yml) in GitHub Actions. A maintainer clicks **Run workflow**, enters the issue number displayed below the dashboard button, and submits the run. The link itself does not start remediation or prefill GitHub's input. Ticking **Request a Codex fix** on the register issue remains an alternative trigger.
 
 ```mermaid
 flowchart LR
