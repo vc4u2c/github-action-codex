@@ -71,7 +71,7 @@ GitHub Issues is the source of truth. `site/register.json` and the dashboard are
 
 ## 5. The Codex harness and remediation skill
 
-The harness is the workflow plus the scripts that prepare input, run Codex, verify its output, and publish the PR. It runs entirely in GitHub Actions. A maintainer supplies a central issue number to [`remediate.yml`](../.github/workflows/remediate.yml).
+The harness is the workflow plus the scripts that prepare input, run Codex, verify its output, and publish the PR. It runs entirely in GitHub Actions. A maintainer starts [`remediate.yml`](../.github/workflows/remediate.yml) by ticking **Request a Codex fix** on a register issue, reached through the dashboard's **Request fix** link. Manual workflow dispatch with an issue number remains supported.
 
 ```mermaid
 flowchart LR
@@ -88,6 +88,12 @@ Each stage uses a separate runner:
 | **Propose** | Restore that exact commit and run `openai/codex-action` with the remediation skill | OpenAI API credential through the Action; no target App key/write token. Produces an untrusted patch and Codex report |
 | **Verify** | Apply and audit the patch on a fresh runner, then install dependencies and run tests in restricted containers | No OpenAI or target App credentials. Produces a receipt tied to the patch SHA-256 and records the verification image |
 | **Publish** | Check the receipt and patch digest, then create the commit, branch, and PR using GitHub APIs | Application App token with Contents/PR write. Links the PR to the register and requests a scan; executes no application code |
+
+[`request-fix.yml`](../.github/workflows/request-fix.yml) handles the checkbox through [`request-remediation.mjs`](../scripts/request-remediation.mjs) and [`lib/fix-request.mjs`](../lib/fix-request.mjs). The `issues: edited` event must contain an unchecked-to-checked transition of the exact request control. The gate checks live GitHub repository permissions for both the original and rerun actor, rejects PRs/closed or unlabeled issues, and validates the finding against the target allowlist. It rechecks identity against the current issue. Permission lookup failures stop the request before dispatch. The listener receives no App or OpenAI secrets; its workflow token has Contents/Issues read and Actions write. Only after authorization does it dispatch `remediate.yml` on the hub's current default branch. Manual dispatch remains protected by GitHub's workflow permissions.
+
+The listener has no register concurrency lock, so unrelated issue edits do not replace pending scans or remediation runs. The existing four-job remediation workflow keeps its shared register lock. The browser stores no credentials and calls no authenticated API.
+
+The generated issue body offers the checkbox only for `open` findings; `pr-open` findings point to the existing PR. Scanner-authored issue updates use `GITHUB_TOKEN` and do not recursively trigger issue-edit workflows. The checkbox is a request control, not a durable queue or a completion flag. Existing shared concurrency and scheduled reconciliation limitations still apply.
 
 The implementation lives in [`prepare-remediation.mjs`](../scripts/prepare-remediation.mjs), [`verify-remediation.mjs`](../scripts/verify-remediation.mjs), [`publish-remediation.mjs`](../scripts/publish-remediation.mjs), and [`lib/remediation.mjs`](../lib/remediation.mjs).
 

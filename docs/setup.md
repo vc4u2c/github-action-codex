@@ -15,6 +15,8 @@ These steps reproduce the two-repository installation. The existing `vc4u2c` dem
 | OpenAI API key | Hub Actions secret |
 | GitHub Pages | Hub dashboard, optional |
 
+The dashboard's **Request fix** link opens the finding's GitHub issue. Ticking **Request a Codex fix** starts the workflow when the requester has write, maintain, or admin access to the hub. This uses the existing workflow token and requires no additional App, secret, or website login integration. See the [register request steps](demo-runbook.md#request-a-fix-from-the-register).
+
 ## 1. Prepare a new workspace
 
 You need Git, Node.js 22 or newer, the GitHub CLI (`gh`), and permission to create repositories and install GitHub Apps under the chosen account. Remediation also needs an OpenAI API project key with available API quota. Scanning and reset do not call OpenAI. GitHub-hosted remediation runners use Docker to isolate application verification. A local Docker engine with Linux containers is needed only if you run `verify-demo.mjs` or the container regression checks locally.

@@ -1,0 +1,31 @@
+name: Request fix from register
+run-name: 'Fix request for register issue #${{ github.event.issue.number }}'
+on:
+  issues:
+    types: [edited]
+permissions:
+  contents: read
+  issues: read
+  actions: write
+# This listener does not write the register or take its concurrency lock.
+# Only an authorized checkbox request dispatches the existing remediation workflow.
+jobs:
+  request:
+    if: >-
+      !github.event.issue.pull_request && github.event.issue.state == 'open' &&
+      contains(github.event.issue.labels.*.name, 'vulnerability-register') &&
+      contains(github.event.issue.body, '- [x] Request a Codex fix') &&
+      !contains(github.event.changes.body.from, '- [x] Request a Codex fix')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - name: Authorize and request remediation
+        run: node scripts/request-remediation.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

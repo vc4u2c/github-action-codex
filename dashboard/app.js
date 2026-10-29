@@ -15,6 +15,7 @@ async function boot() {
   const data = await response.json();
   $('#mode').textContent = data.mode === 'local' ? 'Local scan · preview' : 'GitHub register';
   $('#updated').textContent = 'Snapshot ' + new Date(data.generatedAt).toLocaleString();
+  $('#request-help').hidden = data.mode !== 'github';
   const active = data.findings.filter(f => f.status !== 'resolved');
   const metrics = [['Active findings', active.length, ''], ['Critical / high', active.filter(f => ['critical','high'].includes(f.severity)).length, 'danger'],
     ['PRs in review', active.filter(f => f.status === 'pr-open').length, ''], ['Verified resolved', data.findings.length - active.length, 'good']];
@@ -41,8 +42,12 @@ async function boot() {
       const state = node('td'); state.append(badge(f.status, f.status));
       const dates = node('td'); dates.append(node('span', date(f.firstSeen)), node('small', f.resolvedAt ? 'Resolved ' + date(f.resolvedAt) : 'Still active'));
       const links = node('td', undefined, 'links');
-      if (f.issueUrl) links.append(link('#' + f.issueNumber, f.issueUrl));
-      if (f.remediation?.url) links.append(link('PR #' + f.remediation.number, f.remediation.url));
+      if (f.issueUrl) links.append(link('Register #' + f.issueNumber, f.issueUrl));
+      if (f.status === 'open' && f.issueUrl) {
+        const request = link('Request fix', f.issueUrl + '#request-fix');
+        request.classList.add('request-fix'); links.append(request);
+      }
+      if (f.remediation?.url) links.append(link((f.status === 'pr-open' ? 'Review PR #' : 'PR #') + f.remediation.number, f.remediation.url));
       if (!links.childNodes.length) links.append(node('span', 'Local preview', 'muted'));
       row.append(finding, sev, repo, state, dates, links); $('#findings').append(row);
     }

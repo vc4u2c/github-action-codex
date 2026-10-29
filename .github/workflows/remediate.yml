@@ -1,4 +1,5 @@
 name: Remediate vulnerability
+run-name: 'Remediate register issue #${{ inputs.issue_number }}'
 on:
   workflow_dispatch:
     inputs:

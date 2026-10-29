@@ -24,3 +24,9 @@ assert data['jobs']['propose']['permissions'] == {'contents': 'read'}
 assert data['jobs']['verify']['permissions'] == {'contents': 'read'}
 assert 'pull_request_target' not in data['on']
 print('Remediation job boundaries verified')
+
+request = yaml.load((root / '.github/workflows/request-fix.yml').read_text(), Loader=yaml.BaseLoader)
+assert request['on'] == {'issues': {'types': ['edited']}}
+assert request['permissions'] == {'contents': 'read', 'issues': 'read', 'actions': 'write'}
+assert 'concurrency' not in request
+print('Issue request listener permissions and lock isolation verified')

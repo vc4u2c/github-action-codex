@@ -18,14 +18,14 @@ flowchart TB
   app["Application repo<br/>Node.js code and dependencies"] -->|"1. Read dependencies"| scan["Hub: npm audit"]
   scan -->|"2. Record findings"| register[("Hub: GitHub Issues register")]
   register --> dashboard["GitHub Pages dashboard"]
-  register -->|"3. Choose a finding"| fix["Hub: Codex + skill<br/>Independent verification"]
+  register -->|"3. Request a fix"| fix["Hub: Codex + skill<br/>Independent verification"]
   fix -->|"4. Publish verified fix"| pr["Application repo: pull request"]
   pr -->|"5. Human merge triggers rescan"| scan
 ```
 
 1. The hub scans the application's default branch using `npm audit`.
 2. It creates or updates a GitHub issue for each advisory and refreshes the dashboard.
-3. A maintainer chooses a finding and starts remediation. Codex uses the skill to propose a change; a separate job tests and audits it.
+3. A maintainer clicks **Request fix** on the dashboard and ticks **Request a Codex fix** on its GitHub issue. The workflow checks write access before starting remediation. Codex uses the skill to propose a change; a separate job tests and audits it.
 4. The publish job opens a PR in the application repository.
 5. A human reviews and merges it. The application's notifier requests another hub scan.
 

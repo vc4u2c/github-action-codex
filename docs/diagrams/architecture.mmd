@@ -2,6 +2,6 @@ flowchart TB
   app["Application repo<br/>Node.js code and dependencies"] -->|"1. Read dependencies"| scan["Hub: npm audit"]
   scan -->|"2. Record findings"| register[("Hub: GitHub Issues register")]
   register --> dashboard["GitHub Pages dashboard"]
-  register -->|"3. Choose a finding"| fix["Hub: Codex + skill<br/>Independent verification"]
+  register -->|"3. Request a fix"| fix["Hub: Codex + skill<br/>Independent verification"]
   fix -->|"4. Publish verified fix"| pr["Application repo: pull request"]
   pr -->|"5. Human merge triggers rescan"| scan

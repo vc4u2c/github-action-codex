@@ -21,7 +21,7 @@ flowchart TB
   app["Application repo<br/>Node.js code and dependencies"] -->|"1. Read dependencies"| scan["Hub: npm audit"]
   scan -->|"2. Record findings"| register[("Hub: GitHub Issues register")]
   register --> dashboard["GitHub Pages dashboard"]
-  register -->|"3. Choose a finding"| fix["Hub: Codex + skill<br/>Independent verification"]
+  register -->|"3. Request a fix"| fix["Hub: Codex + skill<br/>Independent verification"]
   fix -->|"4. Publish verified fix"| pr["Application repo: pull request"]
   pr -->|"5. Human merge triggers rescan"| scan
 ```
@@ -29,6 +29,10 @@ flowchart TB
 **A merge does not close a finding by itself.** A successful scan of the application's default branch must confirm the advisory is gone.
 
 The hub owns the workflows, GitHub Issues register, dashboard, and remediation skill. The application repository owns the code, tests, and pull requests. Codex runs on a temporary GitHub Actions runner and uses the OpenAI API; it does not run inside the dashboard.
+
+## Request a fix
+
+On the [dashboard](https://vc4u2c.github.io/github-action-codex/), choose **Request fix**, then tick **Request a Codex fix** on the finding's GitHub issue. You need write access to the hub. The workflow checks authorization, runs Codex and independent verification, and opens a PR for review. Findings that already have an open fix show **Review PR**.
 
 ## Try the local rehearsal
 

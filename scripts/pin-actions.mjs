@@ -1,7 +1,7 @@
 // Resolve maintained version tags to immutable commits. Run intentionally when updating tools.
 import { readFile, writeFile } from 'node:fs/promises';
 const files = ['.github/workflows/ci.yml', '.github/workflows/scan.yml', '.github/workflows/remediate.yml',
-  '../vulnerable-node-demo/.github/workflows/ci.yml', '.github/workflows/reset-demo.yml'];
+  '../vulnerable-node-demo/.github/workflows/ci.yml', '.github/workflows/reset-demo.yml', '.github/workflows/request-fix.yml'];
 const pins = new Map();
 for (const file of files) {
   let source = await readFile(file, 'utf8');
