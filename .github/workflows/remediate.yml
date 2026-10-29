@@ -11,10 +11,12 @@ permissions:
 concurrency:
   group: vulnerability-hub-register
   cancel-in-progress: false
+# Pin the OS: the pinned Codex Action fails its drop-sudo socket check on
+# Ubuntu 26.04. Keep all remediation stages on the same supported OS release.
 jobs:
   prepare:
     if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -82,7 +84,7 @@ jobs:
   propose:
     needs: prepare
     if: needs.prepare.outputs.ready == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     permissions:
       contents: read
@@ -148,7 +150,7 @@ jobs:
           if-no-files-found: error
   verify:
     needs: [prepare, propose]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -188,7 +190,7 @@ jobs:
           if-no-files-found: error
   publish:
     needs: [prepare, verify]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read

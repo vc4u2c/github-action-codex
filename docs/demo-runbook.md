@@ -57,3 +57,7 @@ Open **Remediate vulnerability > the run > propose > Run Codex with the remediat
 The prepare job logs `SKILL_CONFIGURED` and adds a run summary with an immutable link to the skill and its SHA-256. Its **remediation-context** artifact includes `SKILL.md`, `skill.json`, `prompt.md`, and `context.json`. The exact skill text is also included in the prompt sent to Codex. The **codex-report** artifact preserves Codex's final response, including the skill version and its account of the changes and tests. If Codex fails before a final response, inspect the Action logs; there may be no report artifact.
 
 These records show the instructions supplied and observable tool activity. A claimed skill name alone does not prove compliance with every instruction. The separate verify job still determines whether the patch passes tests and removes the advisory.
+
+## Runner compatibility
+
+The four remediation jobs explicitly use `ubuntu-24.04`. During the `ubuntu-latest` migration, [run 40802770824](https://github.com/vc4u2c/github-action-codex/actions/runs/40802770824) received Ubuntu 26.04 and the pinned Codex Action stopped before making a model request: `Could not restrict access to /run/dbus/system_bus_socket`. Pinning the OS preserves the existing `drop-sudo` protection. Revalidate that protection before changing the runner OS or Action version. The OS label still receives GitHub image updates; it does not pin an immutable VM image.

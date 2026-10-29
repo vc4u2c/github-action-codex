@@ -94,7 +94,7 @@ The hub's built-in **`GITHUB_TOKEN`** maintains central issues and dispatches fo
 
 ## Where Codex runs
 
-Codex runs in **`remediate.yml` > `propose`**, on a disposable GitHub-hosted Ubuntu runner. The hub's workflow and scripts form the harness. The Codex Action invokes the pinned Codex CLI against an exported copy of the audited application commit.
+Codex runs in **`remediate.yml` > `propose`**, on a disposable GitHub-hosted Ubuntu 24.04 runner. The hub's workflow and scripts form the harness. The Codex Action invokes the pinned Codex CLI against an exported copy of the audited application commit.
 
 ```mermaid
 flowchart TB
