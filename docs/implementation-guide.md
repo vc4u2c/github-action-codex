@@ -107,7 +107,7 @@ This isolation was added after the first successful live remediation. The [adver
 
 The current model variable is `CODEX_MODEL=gpt-6-luna`; the CLI is pinned to `0.163.0`. The [permission profile](../config/codex.toml) restricts filesystem/network access, and the Action uses `drop-sudo`. All four remediation jobs use `ubuntu-24.04`. The pinned Action failed its system-socket protection check on Ubuntu 26.04 in [this run](https://github.com/vc4u2c/github-action-codex/actions/runs/40802770824); pinning the OS allowed the existing protection to complete.
 
-The first new-fix checkbox request for issue #3 reached propose but [stopped at the Action's caller check](https://github.com/vc4u2c/github-action-codex/actions/runs/40810607779), before any model call. The earlier checkbox test reused an existing PR and skipped propose. The explicit bot allowlist corrects that handoff; testing a new finding must exercise all four jobs.
+The first new-fix checkbox request for issue #3 reached propose but [stopped at the Action's caller check](https://github.com/vc4u2c/github-action-codex/actions/runs/40810607779), before any model call. The earlier checkbox test reused an existing PR and skipped propose. The explicit bot allowlist corrects that handoff. Replaying the authorized listener then completed [all four jobs](https://github.com/vc4u2c/github-action-codex/actions/runs/40811457297) and created [PR #2](https://github.com/vc4u2c/vulnerable-node-demo/pull/2). Testing a new finding must exercise all four jobs.
 
 ### How to verify skill use
 
@@ -155,6 +155,7 @@ Snapshot as of **October 28, 2026 (America/Chicago)**:
 | Scanning, register updates, and Pages publication | [Successful scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40803240896), [dashboard](https://vc4u2c.github.io/github-action-codex/) |
 | Luna remediation through all four jobs | [Successful run 40803030409](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409) |
 | Register checkbox request | [Issue-event listener](https://github.com/vc4u2c/github-action-codex/actions/runs/40810098576) authorized the requester and dispatched [remediation for issue #6](https://github.com/vc4u2c/github-action-codex/actions/runs/40810114462); prepare reused PR #1 and skipped Codex, then a [successful scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40810132586) refreshed the register and Pages |
+| Checkbox through a new Codex fix | [Successful bot-dispatched run](https://github.com/vc4u2c/github-action-codex/actions/runs/40811457297) created [PR #2](https://github.com/vc4u2c/vulnerable-node-demo/pull/2), updating lodash 4.17.20 to 4.18.1 in the two manifests; [application CI](https://github.com/vc4u2c/vulnerable-node-demo/actions/runs/40811670519) passed |
 | Actual skill read | [Propose log](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409/job/123215431165): completed read command and matching `SKILL_READ` hash |
 | Verified fix | [Application PR #1](https://github.com/vc4u2c/vulnerable-node-demo/pull/1): minimist 1.2.5 to 1.2.8, two manifest files changed |
 | Independent tests and advisory checks | [Verifier log](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409/job/123215869300): two tests pass, selected advisory absent, no new advisory identities |
@@ -162,6 +163,8 @@ Snapshot as of **October 28, 2026 (America/Chicago)**:
 | Merge, automatic closure, and live reset cycle | Still pending for this PR; [issue #6](https://github.com/vc4u2c/github-action-codex/issues/6) and the dashboard show `pr-open` |
 
 Five existing lodash advisories remain in the proposed tree. Codex's report records two HTTP-test socket failures in the propose environment; the independent verifier and application CI passed those unchanged tests. The report and verification receipt preserve both results.
+
+For the checkbox-created PR #2, the [completed skill-read command](https://github.com/vc4u2c/github-action-codex/actions/runs/40811457297/job/123242559309) logged the same trusted skill hash. The [container verifier](https://github.com/vc4u2c/github-action-codex/actions/runs/40811457297/job/123242985386) passed both application tests and confirmed the selected advisory was absent with no new advisory keys. Codex's proposal report separately records the local HTTP socket error in its sandbox. Its audit reports only the existing minimist advisory remains. [Issue #3](https://github.com/vc4u2c/github-action-codex/issues/3) is `pr-open`; both PRs remain open for the demo.
 
 The hub also has tests for finding recurrence, failed scans, duplicate detection, issue pagination, target isolation, skill evidence, reset behavior, real Git patch rejection, and all-skipped test rejection. Run them with `npm test`. Hub CI additionally runs Docker isolation tests that attempt to alter audit inputs and access host evidence/credentials. The Docker tests are opt-in locally; see the [review validation commands](adversarial-review.md#repeat-the-checks).
 
