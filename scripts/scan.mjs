@@ -1,3 +1,4 @@
+import { demoTarget, assertDemoBaseline } from '../lib/demo-reset.mjs';
 import { collectActivity } from '../lib/run-activity.mjs';
 import { mkdir, writeFile, appendFile } from 'node:fs/promises';
 import { loadTargets } from '../lib/config.mjs';
@@ -10,6 +11,8 @@ if (!hub) throw new Error('GITHUB_REPOSITORY must identify the central hub');
 const source = new GitHub(process.env.TARGET_TOKEN, fetch, { allowAnonymous: true });
 const register = new GitHub(process.env.GITHUB_TOKEN);
 const targets = await loadTargets();
+const resetTargetId = process.env.RESET_TARGET_ID || null;
+if (resetTargetId) await demoTarget(resetTargetId, targets);
 const previous = await readRegister(register, hub);
 const scans = [];
 await mkdir('artifacts', { recursive: true });
@@ -17,11 +20,12 @@ for (const target of targets) {
   try {
     const result = await auditRemote(source, target);
     await writeFile('artifacts/audit-' + target.id + '.json', JSON.stringify(result.report, null, 2));
+    if (target.id === resetTargetId) await assertDemoBaseline(source, target, result.sha, result.branch);
     // A result from an obsolete default-branch commit cannot resolve current findings.
     const current = await source.get('/repos/' + target.repository + '/commits/' + encodeURIComponent(result.branch));
     if (current.sha !== result.sha) throw new Error('Default branch moved during scan; retry required');
     const { report, ...scan } = result;
-    scans.push({ ...scan, runUrl: process.env.GITHUB_RUN_ID ? 'https://github.com/' + hub + '/actions/runs/' + process.env.GITHUB_RUN_ID : null });
+    scans.push({ ...scan, demoCycleReset: target.id === resetTargetId, runUrl: process.env.GITHUB_RUN_ID ? 'https://github.com/' + hub + '/actions/runs/' + process.env.GITHUB_RUN_ID : null });
   } catch (error) {
     scans.push({ target, success: false, scannedAt: new Date().toISOString(), error: error.message });
   }

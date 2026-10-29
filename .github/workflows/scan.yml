@@ -1,6 +1,12 @@
 name: Scan and reconcile register
 on:
   workflow_dispatch:
+    inputs:
+      reset_target_id:
+        description: Optional demo cycle reset; scanner must confirm the pinned vulnerable baseline
+        required: false
+        default: ''
+        type: string
   schedule:
     - cron: '23 */6 * * *'
 permissions:
@@ -44,6 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TARGET_TOKEN: ${{ steps.app.outputs.token }}
+          RESET_TARGET_ID: ${{ inputs.reset_target_id }}
       - name: Preserve scan evidence and dashboard
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

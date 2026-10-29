@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { demoTarget, planReset, resetRemote } from '../lib/demo-reset.mjs';
+import { demoTarget, planReset, resetRemote, assertDemoBaseline } from '../lib/demo-reset.mjs';
 const target = { id: 'node-demo', repository: 'owner/vulnerable-node-demo', directory: '.', ecosystem: 'npm', demo: { baselineCommit: 'a'.repeat(40) } };
 const blob = (path, sha) => ({ path, sha, mode: '100644', type: 'blob' });
 const baseline = { tree: [blob('package.json', 'old-pkg'), blob('package-lock.json', 'old-lock'),
@@ -79,5 +79,20 @@ test('repeat reset requests reuse an existing open reset PR', async () => {
 test('open remediation PRs block resetting until reviewed or closed', async () => {
   const api = mockApi({ prs: [{ head: { ref: 'codex/fix-abc-123', repo: { full_name: target.repository } }, base: { ref: 'main' } }] });
   await assert.rejects(resetRemote(api, target, '125'), /Merge or close/);
+  assert.equal(api.writes.length, 0);
+});
+
+
+test('fresh cycle requires the actual baseline and never writes application code', async () => {
+  const api = mockApi({ current: baseline });
+  await assertDemoBaseline(api, target, 'b'.repeat(40), 'main');
+  assert.equal(api.writes.length, 0);
+  await assert.rejects(assertDemoBaseline(mockApi(), target, 'b'.repeat(40), 'main'), /no longer matches/);
+  await assert.rejects(assertDemoBaseline(api, target, 'not-a-commit', 'main'), /Invalid audited/);
+});
+
+test('a remediation PR opened after reset still prevents a fresh scan cycle', async () => {
+  const api = mockApi({ current: baseline, prs: [{ head: { ref: 'codex/fix-abc-456', repo: { full_name: target.repository } }, base: { ref: 'main' } }] });
+  await assert.rejects(assertDemoBaseline(api, target, 'b'.repeat(40), 'main'), /Merge or close/);
   assert.equal(api.writes.length, 0);
 });

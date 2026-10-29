@@ -32,7 +32,7 @@ gh pr list --repo $AppRepo
 
 Open the newly created **demo: reset vulnerable application** PR. It must restore only the baseline manifests, `src/`, and `test/`; review the diff and passing application tests, then merge it. This deliberately reintroduces known vulnerable dependencies in the demonstration source. It does not deploy a service and does not call Codex.
 
-The application's push CI then runs `notify-hub`. Wait for its central **Scan and reconcile register** run and Pages job to succeed. Repeated reset requests reuse an existing reset PR; reset blocks while a fix PR is open. If already at baseline, reset only requests a scan.
+The application's push CI then runs `notify-hub`. Wait for its central **Scan and reconcile register** run and Pages job to succeed. Repeated reset requests reuse an existing reset PR; reset blocks while a fix PR is open. If already at baseline, reset requests a scan that starts a fresh demo cycle. This also supports closing unmerged fix PRs and restarting: the scanner rechecks the pinned application tree and absence of open remediation PRs before clearing prior-cycle progress. First-detected dates, issues and previous PR evidence remain intact.
 
 **Checkpoint:** the same issue numbers reopen. Their first-detected dates remain intact, while the new cycle has a fresh timestamp. The pinned baseline currently produces six advisories across two package groups (lodash and minimist); live registry data may change these counts.
 

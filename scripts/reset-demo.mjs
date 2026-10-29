@@ -7,10 +7,10 @@ console.log(result.pr ? 'Reset PR: ' + result.pr.html_url : 'Demo already matche
 if (process.env.GITHUB_STEP_SUMMARY) {
   await appendFile(process.env.GITHUB_STEP_SUMMARY, '# Reset demo\n\n' +
     (result.pr ? '[' + result.pr.title + '](' + result.pr.html_url + ')\n\nMerge this PR, then wait for the central scan to reopen the existing findings.' :
-      'The target is already at the vulnerable baseline. A central scan has been requested.') + '\n');
+      'The target is already at the vulnerable baseline. A central scan has been requested to start a fresh demo cycle.') + '\n');
 }
 if (result.status === 'already-baseline') {
   const hub = process.env.GITHUB_REPOSITORY, api = new GitHub(process.env.GITHUB_TOKEN);
   const repo = await api.get('/repos/' + hub);
-  await api.post('/repos/' + hub + '/actions/workflows/scan.yml/dispatches', { ref: repo.default_branch });
+  await api.post('/repos/' + hub + '/actions/workflows/scan.yml/dispatches', { ref: repo.default_branch, inputs: { reset_target_id: target.id } });
 }

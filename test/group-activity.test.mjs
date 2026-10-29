@@ -1,3 +1,4 @@
+import { validationForFinding } from '../dashboard/validation.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises';
@@ -62,4 +63,19 @@ test('integration baseline comes from the pinned commit even when the sibling ch
  assert.equal(await readFile(join(destination,'package.json'),'utf8'),'{"dependencies":{"minimist":"1.2.5"}}');
  assert.equal(await readFile(join(source,'package.json'),'utf8'),'fixed checkout');
  await assert.rejects(materializeBaseline(source,destination,{...target,demo:{baselineCommit}}),/exist/);
+});
+
+
+test('verified baseline reset restores fix requests after closing unmerged PRs without deleting history', () => {
+ const old={...a,targetId:target.id,issueNumber:1,status:'open',firstSeen:'2026-01-01',cycleStartedAt:'2026-01-01',remediation:{number:7,state:'closed',validation:{verifiedAt:'2026-02-01'}}};
+ const run={id:123,issueNumber:1,createdAt:'2026-02-01',status:'completed',conclusion:'success',jobs:[{name:'verify',status:'completed',conclusion:'success'}]};
+ assert.equal(progressFor(old,[old],[run]).label,'Refreshing register');
+ const scan={target,success:true,findings:[a],scannedAt:'2026-03-01',sha:'b'.repeat(40),demoCycleReset:true};
+ const [fresh]=reconcile([old],[scan]);
+ assert.equal(fresh.status,'open');assert.equal(fresh.cycleStartedAt,scan.scannedAt);
+ assert.equal(fresh.firstSeen,old.firstSeen);assert.equal(fresh.issueNumber,old.issueNumber);assert.deepEqual(fresh.remediation,old.remediation);
+ assert.equal(progressFor(fresh,[fresh],[run]).label,'Not requested');
+ assert.equal(validationForFinding(fresh,[fresh],[run],[scan]).proposal.label,'Not run this cycle');
+ assert.deepEqual(reconcile([old],[{...scan,success:false}]),[old]);
+ assert.equal(reconcile([old],[{...scan,demoCycleReset:false}])[0].cycleStartedAt,old.cycleStartedAt);
 });
