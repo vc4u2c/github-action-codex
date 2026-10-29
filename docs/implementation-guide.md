@@ -152,6 +152,7 @@ Snapshot as of **October 28, 2026 (America/Chicago)**:
 | --- | --- |
 | Scanning, register updates, and Pages publication | [Successful scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40803240896), [dashboard](https://vc4u2c.github.io/github-action-codex/) |
 | Luna remediation through all four jobs | [Successful run 40803030409](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409) |
+| Register checkbox request | [Issue-event listener](https://github.com/vc4u2c/github-action-codex/actions/runs/40810098576) authorized the requester and dispatched [remediation for issue #6](https://github.com/vc4u2c/github-action-codex/actions/runs/40810114462); prepare reused PR #1 and skipped Codex, then a [successful scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40810132586) refreshed the register and Pages |
 | Actual skill read | [Propose log](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409/job/123215431165): completed read command and matching `SKILL_READ` hash |
 | Verified fix | [Application PR #1](https://github.com/vc4u2c/vulnerable-node-demo/pull/1): minimist 1.2.5 to 1.2.8, two manifest files changed |
 | Independent tests and advisory checks | [Verifier log](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409/job/123215869300): two tests pass, selected advisory absent, no new advisory identities |

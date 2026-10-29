@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findingKey } from '../lib/audit.mjs';
 import { issueBody, registerLabel } from '../lib/register.mjs';
-import { authorizeFixRequest, isFixRequest, remediationRecord } from '../lib/fix-request.mjs';
+import { authorizeFixRequest, isFixRequest, remediationRecord, requestRemediation } from '../lib/fix-request.mjs';
 
 const hub = 'owner/hub';
 const target = { id:'app', repository:'owner/app', directory:'.', ecosystem:'npm' };
@@ -101,4 +101,18 @@ test('register output offers requests only for open findings, and retains stored
   assert.match(issueBody(record,hub), /^- \[ \] Request a Codex fix$/m);
   assert.match(issueBody(record,hub), /https:\/\/github.com\/owner\/hub\/actions\/workflows\/remediate.yml/);
   for (const status of ['pr-open','awaiting-verification','resolved']) assert.doesNotMatch(issueBody({...record,status},hub), /^- \[ \] Request a Codex fix$/m);
+});
+
+test('listener ignores unrelated edits without API calls, and dispatches only the authorized issue on the default branch', async () => {
+  const ordinary=fixture(); ordinary.event.issue.body=ordinary.event.changes.body.from;
+  assert.equal(await requestRemediation(ordinary),null);
+  assert.deepEqual(ordinary.calls,[]);
+  const f=fixture(), get=f.api.get, dispatched=[];
+  f.api.get=async path=>path==='/repos/owner/hub'?{default_branch:'trunk'}:get(path);
+  f.api.post=async (path,body)=>dispatched.push({path,body});
+  assert.equal(await requestRemediation(f),6);
+  assert.deepEqual(dispatched,[{path:'/repos/owner/hub/actions/workflows/remediate.yml/dispatches',body:{ref:'trunk',inputs:{issue_number:'6'}}}]);
+  dispatched.length=0;f.api.get=async()=>({permission:'read'});
+  await assert.rejects(requestRemediation(f),/write access/);
+  assert.deepEqual(dispatched,[]);
 });

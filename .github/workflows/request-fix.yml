@@ -12,10 +12,10 @@ permissions:
 jobs:
   request:
     if: >-
-      !github.event.issue.pull_request && github.event.issue.state == 'open' &&
+      ${{ !github.event.issue.pull_request && github.event.issue.state == 'open' &&
       contains(github.event.issue.labels.*.name, 'vulnerability-register') &&
       contains(github.event.issue.body, '- [x] Request a Codex fix') &&
-      !contains(github.event.changes.body.from, '- [x] Request a Codex fix')
+      !contains(github.event.changes.body.from, '- [x] Request a Codex fix') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
