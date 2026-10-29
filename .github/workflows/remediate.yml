@@ -12,6 +12,7 @@ permissions:
 concurrency:
   group: vulnerability-hub-register
   cancel-in-progress: false
+  queue: max
 # Pin the OS: the pinned Codex Action fails its drop-sudo socket check on
 # Ubuntu 26.04. Keep all remediation stages on the same supported OS release.
 jobs:
@@ -117,6 +118,11 @@ jobs:
           mkdir -p "$HOME/.agents/skills/remediate-vulnerability" "$RUNNER_TEMP/remediation-codex"
           cp hub/.agents/skills/remediate-vulnerability/SKILL.md "$HOME/.agents/skills/remediate-vulnerability/SKILL.md"
           cp hub/config/codex.toml "$RUNNER_TEMP/remediation-codex/config.toml"
+      - name: Limit repeated model attempts
+        if: ${{ fromJSON(github.run_attempt) > 3 }}
+        run: |
+          echo "This run has exceeded three attempts. Diagnose the failure before intentionally dispatching a new run."
+          exit 1
       - name: Run Codex with the remediation skill
         uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1
         with:

@@ -1,5 +1,6 @@
+import { materializeBaseline } from '../lib/demo-baseline.mjs';
 // Offline unit tests are separate. This integration exercise uses the npm registry.
-import { mkdir, mkdtemp, cp, writeFile, readFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { git, npmCommand, run } from '../lib/process.mjs';
 import { loadTargets } from '../lib/config.mjs';
@@ -10,11 +11,9 @@ const target = (await loadTargets())[0];
 await mkdir('.work', { recursive: true });
 const folder = await mkdtemp(join(resolve('.work'), 'integration-'));
 const baseline = join(folder, 'baseline'), checkout = join(folder, 'verification');
-await mkdir(baseline);
 const source = resolve('../vulnerable-node-demo');
-for (const file of ['package.json', 'package-lock.json', 'src', 'test', '.gitignore']) {
-  await cp(join(source, file), join(baseline, file), { recursive: true });
-}
+const originalPackage = await readFile(join(source, 'package.json'), 'utf8');
+await materializeBaseline(source, baseline, target);
 await git(['init', '-b', 'main'], { cwd: baseline });
 await git(['add', '.'], { cwd: baseline });
 await git(['-c', 'user.name=Integration Test', '-c', 'user.email=test@example.invalid', 'commit', '-m', 'Vulnerable baseline'], { cwd: baseline });
@@ -41,7 +40,7 @@ const resolved = reconcile(initial, [makeScan(after.findings)]);
 assert.equal(resolved.find(f => f.key === finding.key).status, 'resolved');
 const reopened = reconcile(resolved, [makeScan(before.findings)]);
 assert.equal(reopened.find(f => f.key === finding.key).status, 'open');
-assert.equal(JSON.parse(await readFile(join(source, 'package.json'), 'utf8')).dependencies.minimist, '1.2.5');
+assert.equal(await readFile(join(source, 'package.json'), 'utf8'), originalPackage);
 const evidence = { ...JSON.parse(await readFile(receiptFile, 'utf8')), before: before.findings.length,
   after: after.findings.length, confirmedTransitions: ['open', 'resolved', 'open'],
   originalDemoUnchanged: true, workspace: folder };

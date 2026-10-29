@@ -35,3 +35,11 @@ assert request['on'] == {'issues': {'types': ['edited']}}
 assert request['permissions'] == {'contents': 'read', 'issues': 'read', 'actions': 'write'}
 assert 'concurrency' not in request
 print('Issue request listener permissions and lock isolation verified')
+
+for name in ['scan.yml', 'remediate.yml', 'reset-demo.yml']:
+    config = yaml.load((root / '.github/workflows' / name).read_text(), Loader=yaml.BaseLoader)
+    assert config['concurrency'] == {'group': 'vulnerability-hub-register', 'cancel-in-progress': 'false', 'queue': 'max'}
+refresh = yaml.load((root / '.github/workflows/refresh-after-remediation.yml').read_text(), Loader=yaml.BaseLoader)
+assert refresh['permissions'] == {'contents': 'read', 'actions': 'write'}
+assert all('uses' not in step for step in refresh['jobs']['refresh']['steps'])
+print('Bounded request queue and checkout-free completion refresh verified')

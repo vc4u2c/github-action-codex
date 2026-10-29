@@ -154,6 +154,8 @@ If you do not want hosting, leave `PUBLISH_DASHBOARD` unset. The scan still prod
 
 ## 7. Run the first scan
 
+From the configured hub checkout, run `npm.cmd run preflight -- --hub $HubRepo`. This read-only check validates repository access, workflow/configuration availability, secret names and baseline history; it does not inspect key values or call the model.
+
 ```powershell
 gh workflow run scan.yml --repo $HubRepo --ref main
 gh run list --repo $HubRepo --workflow scan.yml --limit 5

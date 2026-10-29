@@ -3,7 +3,7 @@ import { resolve, join } from 'node:path';
 import { GitHub } from '../lib/github.mjs';
 import { loadTargets } from '../lib/config.mjs';
 import { assertContext, applyProposal } from '../lib/remediation.mjs';
-import { decodeRecord, saveRegister } from '../lib/register.mjs';
+import { decodeRecord, readRegister, saveRegister } from '../lib/register.mjs';
 const context = JSON.parse(await readFile(process.argv[2], 'utf8'));
 assertContext(context, await loadTargets());
 if (context.hub !== process.env.GITHUB_REPOSITORY) throw new Error('Wrong hub');
@@ -13,6 +13,12 @@ const checked = await applyProposal(context, checkout, patch);
 if (receipt.patchSha256 !== checked.patchSha256 || receipt.baseSha !== context.sha || receipt.findingKey !== context.finding.key) throw new Error('Verification receipt does not match the proposal');
 const source = new GitHub(process.env.TARGET_TOKEN), register = new GitHub(process.env.GITHUB_TOKEN);
 const root = '/repos/' + context.target.repository;
+const required = (context.findings || [context.finding]).map(f => f.key);
+if (!Array.isArray(receipt.resolvedKeys) || required.some(key => !receipt.resolvedKeys.includes(key)) ||
+    receipt.resolvedKeys.some(key => !context.before.some(f => f.key === key))) throw new Error('Receipt is missing verified group findings');
+const records = await readRegister(register, context.hub);
+const linked = records.filter(r => r.repository === context.target.repository && r.manifest === context.finding.manifest && receipt.resolvedKeys.includes(r.key));
+if (!linked.some(r => r.key === context.finding.key)) throw new Error('Selected register entry changed identity');
 const baseCommit = await source.get(root + '/git/commits/' + context.sha);
 const tree = [];
 for (const file of checked.files) {
@@ -36,14 +42,14 @@ catch (error) {
 }
 const prs = await source.list(root + '/pulls?state=open&head=' + encodeURIComponent(context.target.repository.split('/')[0] + ':' + context.branch));
 const pr = prs[0] || await source.post(root + '/pulls', {
-  title: 'fix: remediate ' + context.finding.package + ' (' + context.finding.advisoryId + ')',
+  title: 'fix: remediate ' + context.finding.package + ' (' + required.length + ' advisories)',
   head: context.branch, base: context.base,
-  body: 'Addresses central register entry ' + context.issueUrl + '.\n\n' +
+  body: 'Addresses these verified register findings:\n' + linked.map(r => '- ' + r.advisoryId + ': ' + r.issueUrl).join('\n') + '.\n\n' +
     'Codex applied the central remediation skill to the dependency finding at commit ' + context.sha + '.\n\n' +
     'Skill: ' + context.skill.name + ' (`' + context.skill.sha256 + '`). ' +
     'Inspect the workflow logs for the skill-read command; the remediation-context and codex-report artifacts preserve the supplied instructions and final response.\n\n' +
     'Independent validation: npm ci succeeded with lifecycle scripts disabled; application tests passed; ' +
-    'a fresh npm audit confirmed the selected advisory is absent and introduced no new advisory keys.\n\n' +
+    'a fresh npm audit confirmed every advisory in the selected package group is absent and introduced no new advisory keys.\n\n' +
     'Other existing findings may remain. Review the dependency and source diff before merging. ' +
     'After merge, the hub rescans the default branch before closing the register entry.\n\n' +
     'Validation: https://github.com/' + context.hub + '/actions/runs/' + process.env.GITHUB_RUN_ID,
@@ -51,7 +57,7 @@ const pr = prs[0] || await source.post(root + '/pulls', {
 const issue = await register.get('/repos/' + context.hub + '/issues/' + context.issueNumber);
 const record = decodeRecord(issue);
 if (record?.key !== context.finding.key) throw new Error('Register entry changed identity');
-await saveRegister(register, context.hub, [{ ...record, status: 'pr-open', remediation: { number: pr.number, url: pr.html_url, state: 'open', patchSha256: checked.patchSha256 } }]);
+await saveRegister(register, context.hub, linked.map(r => ({ ...r, status: 'pr-open', remediation: { number: pr.number, url: pr.html_url, state: 'open', groupKey: context.groupKey, resolvedKeys: receipt.resolvedKeys, patchSha256: checked.patchSha256 } })));
 console.log('Remediation PR: ' + pr.html_url);
 const hubRepo = await register.get('/repos/' + context.hub);
 await register.post('/repos/' + context.hub + '/actions/workflows/scan.yml/dispatches', { ref: hubRepo.default_branch });

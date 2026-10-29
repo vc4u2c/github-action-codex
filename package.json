@@ -13,6 +13,8 @@
     "scan": "node scripts/scan.mjs",
     "configure": "node scripts/configure.mjs",
     "demo:reset": "node scripts/local-demo-cycle.mjs reset",
-    "demo:fix": "node scripts/local-demo-cycle.mjs fix"
+    "demo:fix": "node scripts/local-demo-cycle.mjs fix",
+    "preflight": "node scripts/preflight.mjs",
+    "demo:verify": "node scripts/verify-demo.mjs"
   }
 }

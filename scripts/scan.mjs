@@ -1,3 +1,4 @@
+import { collectActivity } from '../lib/run-activity.mjs';
 import { mkdir, writeFile, appendFile } from 'node:fs/promises';
 import { loadTargets } from '../lib/config.mjs';
 import { GitHub } from '../lib/github.mjs';
@@ -33,7 +34,9 @@ for (const record of previous) {
   catch { refreshed.push(record); }
 }
 const findings = await saveRegister(register, hub, reconcile(refreshed, scans));
-const snapshot = { generatedAt: new Date().toISOString(), mode: 'github', hub, scans, findings };
+let activity;
+try { activity=await collectActivity(register,hub); } catch { activity={runs:[],unavailable:true}; }
+const snapshot = { activity, generatedAt: new Date().toISOString(), mode: 'github', hub, scans, findings };
 await writeFile('artifacts/register.json', JSON.stringify(snapshot, null, 2));
 await buildDashboard(snapshot);
 if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, markdownSummary(snapshot));

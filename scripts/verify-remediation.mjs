@@ -17,5 +17,6 @@ const tests = await runApplicationTests(checkout, context.target.directory);
 printTestOutput(tests);
 assertTestsPassed(tests);
 await writeFile(receipt, JSON.stringify({ ...checked, baseSha: context.sha, findingKey: context.finding.key,
+  resolvedKeys: context.before.filter(f => !audit.findings.some(a => a.key === f.key)).map(f => f.key),
   verifiedAt: new Date().toISOString(), remainingFindings: audit.findings.length, verificationImage }, null, 2));
 console.log('Verified: tests pass, selected finding removed, no new advisory keys');

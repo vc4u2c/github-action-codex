@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 const files = { '/': ['index.html', 'text/html'], '/index.html': ['index.html', 'text/html'],
+  '/activity.js': ['activity.js', 'text/javascript'], '/activity.json': ['activity.json', 'application/json'],
   '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/register.json': ['register.json', 'application/json'] };
 const port = Number(process.env.PORT || 4173);
 createServer(async (req, res) => {

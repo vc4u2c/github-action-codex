@@ -37,7 +37,7 @@ The new sandbox uses a digest-pinned Node image, non-root application processes,
 - Passing tests do not prove correctness. Existing test files must remain, but their assertions can change; source and test diffs still need human review. There is no automatic merge.
 - Containers share the host kernel. This demo uses temporary GitHub-hosted runners; it is not a sandbox for arbitrary hostile multi-tenant workloads. Dependency installation has external network access, and no private-registry credentials are supplied.
 - The skill's completed read command and hash are inspectable in the logs. The pipeline does not attest that a model followed every instruction.
-- A shared Actions concurrency group serializes register writers but is not a durable queue. Scheduled scans recover missed notifications; GitHub and registry failures can delay updates.
+- A shared Actions concurrency group serializes register writers and now queues up to 100 pending runs; overflow is cancelled. Scheduled scans recover missed notifications; GitHub and registry failures can delay updates.
 - Both fix PRs have since merged, and the notifier-triggered [post-merge scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40812486604) closed all six register findings. The live reset/reopen cycle remains unexercised; local lifecycle tests are separate evidence.
 
 ## Where `no-mistakes` fits
@@ -59,4 +59,4 @@ Remove-Item Env:HUB_CONTAINER_TESTS
 node scripts/verify-demo.mjs
 ```
 
-The final command requires the sibling application checkout at its vulnerable baseline and access to the public npm registry. It works in a disposable workspace, writes `artifacts/integration-verification.json`, and leaves the sibling application checkout and GitHub PR unchanged. Use `npm.cmd` on Windows if `npm.ps1` is blocked.
+The final command requires the sibling application repository to retain the pinned vulnerable baseline commit and access to the public npm registry. Its current checkout can be fixed; the verifier materializes the baseline in a new private folder. It works in a disposable workspace, writes `artifacts/integration-verification.json`, and leaves the sibling application checkout and GitHub PR unchanged. Use `npm.cmd` on Windows if `npm.ps1` is blocked.

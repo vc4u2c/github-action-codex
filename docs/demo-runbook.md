@@ -1,88 +1,107 @@
-# Demo runbook
+# Repeatable demo runbook
 
-[Architecture](architecture.md) | [Setup](setup.md) | [Implementation and evidence](implementation-guide.md)
+[Five-minute presentation card](demo-quickstart.md) ? [Architecture](architecture.md) ? [Setup](setup.md) ? [Implementation and evidence](implementation-guide.md)
 
-Use the same repositories and register for every demonstration. Setup is already complete for the `vc4u2c` demo.
+This runbook uses the same two repositories, Apps, and issue identities on every cycle. Routine hub changes go directly to main. The remediation agent always proposes application changes through a PR; review and merge passing fixes. The workflow never merges its own PRs.
 
-## Current demo state
+## 1. Check readiness
 
-[Application PR #1](https://github.com/vc4u2c/vulnerable-node-demo/pull/1) (minimist) and [PR #2](https://github.com/vc4u2c/vulnerable-node-demo/pull/2) (lodash) are merged. The application's main branch uses minimist 1.2.8 and lodash 4.18.1. The automatic post-merge scan closed all six register issues; the dashboard shows six resolved findings and zero active findings.
+From the hub checkout in PowerShell:
 
-You can demonstrate the completed lifecycle using the merged PRs, [Codex run](https://github.com/vc4u2c/github-action-codex/actions/runs/40811457297), and [automatic closing scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40812486604). To demonstrate a new live fix, use [Reset for the next demo](#reset-for-the-next-demo) first. Reset deliberately reintroduces the vulnerable baseline through a reviewable PR.
-
-Routine hub edits are committed and pushed directly. The remediation automation continues to create application PRs for review; it never merges them itself. Merge appropriate fixes after reviewing the diff and passing checks.
-
-## Request a fix from the register
-
-1. Open the [dashboard](https://vc4u2c.github.io/github-action-codex/) and choose **Request fix** on an open finding.
-2. Sign in to GitHub using an account with **write, maintain, or admin access to the hub**.
-3. On the **Remediate vulnerability** workflow page, click **Run workflow**. Keep the default branch selected, enter the issue number shown below the dashboard button, then click **Run workflow** to start.
-4. Follow the run named with that register issue number. When verification passes, the issue and dashboard link to the proposed fix PR.
-
-Alternatively, open **Register #N** and tick **Request a Codex fix** on the issue. The checkbox requests a run; it does not merge a PR or resolve the finding. A scan may reset the checkbox, so use the Actions run to check progress. Ordinary issue edits and unticking the box do not request a fix; unticking also does not cancel a running job. If a run fails, use Actions to rerun it or clear and tick the box again. Manual **Run workflow** with the issue number remains available.
-
-Public visitors can browse findings. Only a maintainer with write access can start remediation. Findings with an open PR show **Review PR** instead of **Request fix**. Requesting a new fix can start a paid Codex run; viewing completed runs does not.
-
-## Present the GitHub workflow
-
-| Step | Action | What to show |
-| --- | --- | --- |
-| 1. Scan | In the hub's Actions tab, run **Scan and reconcile register** on main | Repository, severity, dates, status, and issue links in the dashboard |
-| 2. Remediate | Choose **Request fix**, then **Run workflow** with the displayed issue number | The separate prepare, propose, verify, and publish jobs |
-| 3. Show evidence | Open the propose and verify logs | Actual skill read, dependency edits, independent tests and audit |
-| 4. Review PR | Open the application PR and its checks | The dependency diff and link back to the central register |
-| 5. Merge when ready | Review and merge the PR | Default-branch CI and the separate `notify-hub` job |
-| 6. Verify closure | Wait for the hub's requested scan and Pages deployment | Issue closes only after the advisory is confirmed absent; dashboard shows resolved |
-
-You can pause after step 4 if you want to keep a future PR open for a presentation. Otherwise, continue through merge and verification. Scanning while a PR remains open does not merge it or mark its finding resolved.
-
-If notification is unavailable, run **Scan and reconcile register** manually after merge. Other existing advisories can remain open; the demo fix targets one selected finding.
-
-## Show the skill in the run logs
-
-Open **Remediate vulnerability > the run > propose > Run Codex with the remediation skill**. Find the completed `read-remediation-skill.mjs` command, exit code 0, and its `SKILL_READ name=remediate-vulnerability sha256=...` output. Compare the hash with prepare's `SKILL_CONFIGURED` output.
-
-The run artifacts preserve the exact instructions, context, Codex report, patch, and verification receipt. A skill name in a prompt alone is not proof that it ran. See the [evidence map](implementation-guide.md#how-to-verify-skill-use).
-
-## Reset for the next demo
-
-Complete or close open remediation PRs before resetting. Both original fix PRs are now merged, so the demo is ready for a reset when you choose to start another cycle.
-
-1. In the hub, run **Reset demo** on main with `target_id=node-demo`.
-2. Review the reset PR in the application repository and merge it.
-3. Wait for the notifier and hub scan. The same finding issue reopens.
-4. Run remediation again to demonstrate a new Codex-generated fix.
-
-Reset restores the pinned baseline's manifests, `src/`, and `test/`, preserving workflows, documentation, Git history, and register history. It makes no OpenAI call and reuses an already open reset PR. Only targets with an explicit `demo.baselineCommit` can be reset.
-
-## Local rehearsal without GitHub or OpenAI credentials
-
-With both repositories cloned as siblings, run these commands from the hub:
-
-```sh
-npm run demo:reset
-npm run dashboard
+```powershell
+$HubRepo = "vc4u2c/github-action-codex"
+$AppRepo = "vc4u2c/vulnerable-node-demo"
+npm.cmd run preflight -- --hub $HubRepo
 ```
 
-Open **http://127.0.0.1:4173**. In a second terminal, also in the hub:
+Expect PASS for GitHub access, workflow availability, secret **names**, variables, manifests, and baseline history. The report is saved to `artifacts/preflight.json`. Add `--containers` if you will run the local container verifier. The checker is read-only: it does not inspect secret values, spend OpenAI credit, start a workflow, or prove API billing/model access. A successful real remediation proves those runtime connections.
 
-```sh
-npm run demo:fix
-# Refresh: the minimist finding is resolved.
-npm run demo:reset
-# Refresh: the same finding is open again.
+Open the [dashboard](https://vc4u2c.github.io/github-action-codex/), [hub Actions](https://github.com/vc4u2c/github-action-codex/actions), and [application PRs](https://github.com/vc4u2c/vulnerable-node-demo/pulls) in separate tabs. Review any open fix/reset PR before starting another cycle.
+
+## 2. Restore the vulnerable baseline
+
+If the dashboard already has the expected open baseline findings and there are no outstanding fix PRs, continue to step 3. Otherwise:
+
+```powershell
+gh workflow run reset-demo.yml --repo $HubRepo --ref main -f target_id=node-demo
+gh run list --repo $HubRepo --workflow reset-demo.yml --limit 3
+gh pr list --repo $AppRepo
 ```
 
-On Windows PowerShell, use `npm.cmd` if needed. The commands use `.work/demo-target`, an isolated copy of the baseline. They install dependencies with lifecycle scripts disabled, run tests and a real npm audit, and preserve local register history in `artifacts/local-register.json`. The sibling application checkout and GitHub PR remain unchanged.
+Open the newly created **demo: reset vulnerable application** PR. It must restore only the baseline manifests, `src/`, and `test/`; review the diff and passing application tests, then merge it. This deliberately reintroduces known vulnerable dependencies in the demonstration source. It does not deploy a service and does not call Codex.
 
-`demo:fix` performs a scripted upgrade for rehearsal. The GitHub remediation workflow demonstrates the actual Codex agent. Advisory counts and severity come from the live npm database and may change.
+The application's push CI then runs `notify-hub`. Wait for its central **Scan and reconcile register** run and Pages job to succeed. Repeated reset requests reuse an existing reset PR; reset blocks while a fix PR is open. If already at baseline, reset only requests a scan.
 
-To scan the sibling checkout explicitly, use `npm run demo -- ../vulnerable-node-demo`. With a running Docker engine using Linux containers, run `node scripts/verify-demo.mjs`; evidence is written to `artifacts/integration-verification.json`.
+**Checkpoint:** the same issue numbers reopen. Their first-detected dates remain intact, while the new cycle has a fresh timestamp. The pinned baseline currently produces six advisories across two package groups (lodash and minimist); live registry data may change these counts.
 
-## Runner compatibility
+## 3. Request one package fix
 
-Keep the remediation runner and Action versions documented in the [implementation guide](implementation-guide.md#5-the-codex-harness-and-remediation-skill). Validate changes before a presentation.
+On the dashboard, choose **Request fix** beside an open package. GitHub opens **Remediate vulnerability**. Click **Run workflow**, keep `main`, enter the issue number shown below the dashboard button, and submit. Write access to the hub is required.
 
-## Verified live example
+Equivalent PowerShell:
 
-The [implementation guide](implementation-guide.md#8-what-has-been-demonstrated) links the successful run, actual skill execution, independent test results, application CI, and current PR/register state.
+```powershell
+$IssueNumber = Read-Host "Register issue number shown for this package"
+gh workflow run remediate.yml --repo $HubRepo --ref main -f "issue_number=$IssueNumber"
+```
+
+Alternatively, open a register issue and tick **Request a Codex fix**. The listener verifies the human's write access before dispatching the workflow. The checkbox is a request control, not a completion indicator; unticking it does not cancel a run.
+
+**Checkpoint:** **Fix progress** changes to Requested / queued, then Running. Use **Refresh status** or **View run** to follow prepare ? propose ? verify ? publish. The dashboard reads public Actions status without a browser token; it refreshes on return to the tab and periodically while visible. Private repositories or API rate limits may require viewing progress directly in Actions. Finding resolution and usage come from scan snapshots.
+
+A fix groups advisories by repository + manifest + package. Selecting another advisory from the same group reuses the open package PR rather than spending another model call. The verifier requires all advisories selected in that package group to disappear; unrelated packages stay for a later request.
+
+## 4. Show the skill, usage, and independent verification
+
+In **propose ? Run Codex with the remediation skill**, find the completed `read-remediation-skill.mjs` command, exit code 0, and `SKILL_READ name=remediate-vulnerability sha256=...`. Compare the hash with prepare's `SKILL_CONFIGURED`. A skill name appearing in the prompt alone is not execution evidence.
+
+The context artifact contains the exact skill, grouped advisories, audited commit and related issues. The proposal is an untrusted patch. The separate verifier audits the pristine patch, installs with lifecycle scripts disabled, and runs tests in restricted containers before producing its receipt. The publisher uses a separate runner and App token to create the PR.
+
+The dashboard's **Remediation activity**, `activity.json`, and scan summary show input/cached/output tokens, duration, and run/attempt links. Counts come from completed CLI turn events for the latest attempt, not an invoice or a hard spending cap. Unavailable logs/usage do not mean zero charge; interrupted turns may have usage that is not reported. Review actual charges in the API billing console. The proposal job has a 25-minute timeout and stops before calling the model after attempt 3; a new manual dispatch starts a new attempt budget. Do not repeatedly rerun an unexplained failure.
+
+## 5. Review and merge the package PR
+
+Confirm the PR links every verified advisory it fixes, changes only expected dependency/source/test files, and has passing application CI. Review and merge it. To reduce manifest conflicts, finish one package's merge and rescan before requesting the next package. An already-open PR is reused.
+
+**Checkpoint:** the application push test and `notify-hub` succeed. The central scan closes only findings absent from the new default-branch audit. A closed-but-unmerged PR or a failed scan cannot resolve a finding. The dashboard's PR count counts distinct PRs, not advisory rows.
+
+Repeat steps 3?5 for the remaining package groups. At the clean ending, the dashboard shows zero active findings and all detected findings resolved. No fix PR should remain open.
+
+## 6. Repeat or recover
+
+To demonstrate again, start at step 2. The reset does not delete issues, Apps, workflow evidence, or history. The new cycle ignores old failed run status when displaying current progress.
+
+| Situation | Recovery |
+| --- | --- |
+| No progress after requesting | Check the issue-numbered Actions run. Refresh the dashboard. Confirm GitHub write access and main branch. |
+| Queued run | Register writers run one at a time. `queue: max` holds up to 100 pending jobs; excess requests are cancelled. Check Actions rather than repeatedly requesting. |
+| Failed prepare/propose/verify/publish | The dashboard links the failed run and step. Read its error, correct the cause, then retry deliberately. Never treat a failed run as a fix. |
+| Quota/model/access error | Check the API project behind `OPENAI_API_KEY`, available credit, and `CODEX_MODEL`. Preflight checks names, not key validity. |
+| Codex reports a local HTTP socket error | Read the separate verifier result. The PR is published only after independent tests pass. |
+| PR conflicts | Preserve both intended upgrades, run tests/audit, push the resolution to that existing PR, and wait for CI before merge. |
+| Merge did not close issues | Check app `notify-hub`, then the hub scan. If necessary run `gh workflow run scan.yml --repo $HubRepo --ref main`. |
+| Dashboard or usage is stale | Check the scan/Pages jobs and snapshot timestamp. Every completed remediation requests a refresh, including failures; unavailable logs are explicitly marked. |
+| Live Actions data unavailable | Public API rate limits/private-repo permissions do not change register truth. Open the linked Actions run; do not paste tokens into the dashboard. |
+| Reset blocked | Merge or close outstanding remediation PRs first. Reuse any existing reset PR. |
+
+## Local rehearsal without paid model calls
+
+```powershell
+npm.cmd run demo:reset
+npm.cmd run dashboard
+# Open http://127.0.0.1:4173, then in another terminal:
+npm.cmd run demo:fix
+npm.cmd run demo:reset
+```
+
+These commands use `.work/demo-target`, restore the pinned commit, run real npm audits/tests, and persist a local register. The fix is scripted for rehearsal; it is not a Codex run. The real application checkout and GitHub remain unchanged. Network access to the public npm registry is required.
+
+For the actual independent verifier, with Docker running Linux containers:
+
+```powershell
+npm.cmd run demo:verify
+```
+
+This materializes the pinned vulnerable commit in a new private workspace, even when the sibling application's main branch is already fixed. It verifies a minimist patch in containers and checks open ? resolved ? open. Evidence is saved to `artifacts/integration-verification.json`; the sibling checkout is left unchanged.
+
+[Implementation evidence](implementation-guide.md#8-what-has-been-demonstrated) records the actual live cycles. A local rehearsal and a live GitHub cycle are separate evidence.

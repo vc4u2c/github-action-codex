@@ -1,9 +1,10 @@
+import { groupedFindings, groupKey, existingFix } from '../lib/remediation-group.mjs';
 import { mkdir, writeFile, appendFile } from 'node:fs/promises';
 import { readSkill, remediationPrompt } from '../lib/skill-evidence.mjs';
 import { GitHub } from '../lib/github.mjs';
 import { loadTargets } from '../lib/config.mjs';
 import { auditRemote } from '../lib/audit.mjs';
-import { saveRegister } from '../lib/register.mjs';
+import { saveRegister, readRegister } from '../lib/register.mjs';
 import { remediationRecord } from '../lib/fix-request.mjs';
 const hub = process.env.GITHUB_REPOSITORY;
 const number = Number(process.env.ISSUE_NUMBER);
@@ -25,15 +26,20 @@ if (!finding) {
   await requestScan(); await output({ ready: 'false' });
 } else {
   const open = await source.list('/repos/' + target.repository + '/pulls?state=open');
-  const existing = open.find(p => p.head.repo?.full_name === target.repository && p.head.ref.startsWith('codex/fix-' + finding.key + '-'));
+  const records = await readRegister(register, hub);
+  const findings = groupedFindings(finding, scan.findings);
+  const keys = new Set(findings.map(f => f.key));
+  const related = records.filter(r => keys.has(r.key));
+  const existing = existingFix(open, finding, related, scan.branch);
   if (existing) {
-    await saveRegister(register, hub, [{ ...record, status: 'pr-open', remediation: { number: existing.number, url: existing.html_url, state: 'open' } }]);
+    const linked = related.filter(r => r.remediation?.number === existing.number || r.key === record.key);
+    await saveRegister(register, hub, linked.map(r => ({ ...r, status: 'pr-open', remediation: { ...r.remediation, number: existing.number, url: existing.html_url, state: 'open' } })));
     await requestScan(); await output({ ready: 'false' }); console.log('Existing PR: ' + existing.html_url);
   } else {
     const skill = await readSkill();
     const { content, ...skillIdentity } = skill;
-    const context = { skill: skillIdentity, hubSha: process.env.GITHUB_SHA || null, target, finding, before: scan.findings, sha: scan.sha, base: scan.branch, issueNumber: number,
-      issueUrl: issue.html_url, hub, branch: 'codex/fix-' + finding.key + '-' + (process.env.GITHUB_RUN_ID || Date.now()) };
+    const context = { skill: skillIdentity, hubSha: process.env.GITHUB_SHA || null, target, finding, findings, groupKey: groupKey(finding), relatedIssues: related.map(r => ({ key: r.key, number: r.issueNumber, url: r.issueUrl })), before: scan.findings, sha: scan.sha, base: scan.branch, issueNumber: number,
+      issueUrl: issue.html_url, hub, branch: 'codex/fix-' + groupKey(finding) + '-' + (process.env.GITHUB_RUN_ID || Date.now()) };
     await mkdir('.work', { recursive: true });
     await writeFile('.work/context.json', JSON.stringify(context, null, 2));
     const prompt = remediationPrompt(context, skill);

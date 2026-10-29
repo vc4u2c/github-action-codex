@@ -11,6 +11,7 @@ A working demo of a central repository that finds dependency vulnerabilities in 
 | [Architecture](docs/architecture.md) | The two repositories, simple Mermaid diagrams, and the two GitHub Apps |
 | [Setup](docs/setup.md) | How to reproduce the installation, with commands and checkpoints |
 | [Implementation](docs/implementation-guide.md) | What was built, how the code works, credentials, and verified run evidence |
+| [Five-minute demo card](docs/demo-quickstart.md) | Presenter sequence and talking points |
 | [Demo runbook](docs/demo-runbook.md) | How to scan, fix, merge, verify closure, and reset for another demo |
 | [Adversarial review](docs/adversarial-review.md) | Reproduced verification gaps, fixes, regression checks, and remaining limits |
 
@@ -32,7 +33,7 @@ The hub owns the workflows, GitHub Issues register, dashboard, and remediation s
 
 ## Request a fix
 
-On the [dashboard](https://vc4u2c.github.io/github-action-codex/), choose **Request fix** to open GitHub Actions. Click **Run workflow**, enter the issue number shown below the dashboard button, and click **Run workflow** to start. The issue checkbox remains available as an alternative. You need write access to the hub. The workflow checks authorization, runs Codex and independent verification, and opens a PR for review. Findings that already have an open fix show **Review PR**.
+On the [dashboard](https://vc4u2c.github.io/github-action-codex/), choose **Request fix** to open GitHub Actions. Click **Run workflow**, enter the issue number shown below the dashboard button, and click **Run workflow** to start. The issue checkbox remains available as an alternative. You need write access to the hub. The workflow checks authorization, groups advisories for the package, runs Codex and independent verification, and opens one PR linked to every verified finding. The dashboard shows run progress, failed steps, and token usage. Findings that already have an open fix show **Review PR**.
 
 ## Try the local rehearsal
 

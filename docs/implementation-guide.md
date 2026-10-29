@@ -67,7 +67,7 @@ Closing a PR without merging does not resolve its finding. A merged PR that leav
 
 [`lib/dashboard.mjs`](../lib/dashboard.mjs) combines the register snapshot with the static files in [`dashboard/`](../dashboard/). The scan uploads `artifacts/` and `site/` as the **vulnerability-dashboard** artifact. When `PUBLISH_DASHBOARD=true`, its Pages job publishes `site/`.
 
-GitHub Issues is the source of truth. `site/register.json` and the dashboard are snapshots with a generation timestamp. There is no separate database. Local rehearsal instead persists its register in `artifacts/local-register.json`.
+GitHub Issues is the source of truth. `site/register.json` and the dashboard are snapshots with a generation timestamp. There is no separate database. `activity.json` and scan summaries contain the latest 20 remediation runs with job results and CLI-reported token usage for the latest attempt. A checkout-free completion workflow requests a new scan after success or failure. The dashboard also reads public Actions status live, with a visible fallback when the API is unavailable; this never changes finding resolution. Local rehearsal instead persists its register in `artifacts/local-register.json`.
 
 ## 5. The Codex harness and remediation skill
 
@@ -94,6 +94,8 @@ Each stage uses a separate runner:
 The listener has no register concurrency lock, so unrelated issue edits do not replace pending scans or remediation runs. The existing four-job remediation workflow keeps its shared register lock. The browser stores no credentials and calls no authenticated API.
 
 The generated issue body offers the checkbox only for `open` findings; `pr-open` findings point to the existing PR. Scanner-authored issue updates use `GITHUB_TOKEN` and do not recursively trigger issue-edit workflows. The checkbox is a request control, not a durable queue or a completion flag. Existing shared concurrency and scheduled reconciliation limitations still apply.
+
+Package groups use repository + manifest + package. Prepare collects all current advisories in the selected group; verify requires all of them to disappear and records every removed advisory key. Publish links each verified register record to one PR. Repeat requests for the same group reuse the existing PR. A new scan after recurrence records a new cycle timestamp so previous failures do not appear as current progress.
 
 The implementation lives in [`prepare-remediation.mjs`](../scripts/prepare-remediation.mjs), [`verify-remediation.mjs`](../scripts/verify-remediation.mjs), [`publish-remediation.mjs`](../scripts/publish-remediation.mjs), and [`lib/remediation.mjs`](../lib/remediation.mjs).
 
@@ -144,6 +146,8 @@ A successful rescan closes the selected issue only if the advisory is absent. If
 
 Reset is available only for explicit demo targets. It reuses an open reset PR and blocks when a remediation PR is still open. After human merge, the normal notifier/scan loop reopens recurring findings. Reset does not call OpenAI.
 
+The integration verifier reads the pinned baseline commit rather than copying the current application checkout, so it works after merged fixes.
+
 Local `demo:reset` and `demo:fix` use [`local-demo-cycle.mjs`](../scripts/local-demo-cycle.mjs) in `.work/demo-target`. The local fix is scripted; it rehearses the lifecycle without calling Codex. [`verify-demo.mjs`](../scripts/verify-demo.mjs) exercises the real patch verifier in an isolated workspace. See the [runbook](demo-runbook.md) for commands.
 
 ## 8. What has been demonstrated
@@ -179,9 +183,9 @@ The hub also has tests for finding recurrence, failed scans, duplicate detection
 | React or another test framework | Adapt the verifier and allowed file types; the current contract uses `.mjs` and Node's test runner |
 | Private registries | Add explicit registry credentials and network policy; the current audit uses the public npm registry |
 | SAST, secrets, containers, or cloud resources | Add scanner adapters, finding identities, and evidence/verification rules |
-| Larger fleet | Add a durable queue, storage, and finer-grained locking; current register writers share one concurrency group |
+| Larger fleet | Add a durable queue, storage, and finer-grained locking; register writers share a bounded 100-pending-run queue |
 
-The shared concurrency group prevents concurrent register writes, but GitHub may replace an older pending run with a newer one. Scheduled reconciliation provides recovery for this demo; it is not a durable job queue.
+The shared concurrency group prevents concurrent register writes and uses `queue: max` for up to 100 pending runs. Overflow is cancelled; it is not unbounded storage or automatic retry. Scheduled reconciliation recovers missed scan notifications. See [GitHub concurrency](https://docs.github.com/en/actions/concepts/workflows-and-actions/concurrency).
 
 The verification contract currently requires Linux containers and tests that write scratch files under the system temporary directory. Tests cannot write the application checkout or contact external services. GitHub-hosted remediation runners provide Docker; local `verify-demo.mjs` requires a running Docker engine with Linux containers. The ordinary dashboard rehearsal does not require Docker.
 
