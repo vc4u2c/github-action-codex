@@ -59,7 +59,7 @@ test('integration baseline comes from the pinned commit even when the sibling ch
  await git(['init','-b','main'],{cwd:source});await git(['add','.'],{cwd:source});await git(['-c','user.name=Test','-c','user.email=test@example.invalid','commit','-m','baseline'],{cwd:source});
  const baselineCommit=await git(['rev-parse','HEAD'],{cwd:source});await writeFile(join(source,'package.json'),'fixed checkout');
  const destination=join(folder,'fixture');await materializeBaseline(source,destination,{...target,demo:{baselineCommit}});
- assert.equal(JSON.parse(await readFile(join(destination,'package.json'),'utf8')).dependencies.minimist,'1.2.5');
+ assert.equal(await readFile(join(destination,'package.json'),'utf8'),'{"dependencies":{"minimist":"1.2.5"}}');
  assert.equal(await readFile(join(source,'package.json'),'utf8'),'fixed checkout');
  await assert.rejects(materializeBaseline(source,destination,{...target,demo:{baselineCommit}}),/exist/);
 });

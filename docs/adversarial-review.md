@@ -19,9 +19,15 @@ The application PR did not contain either attack: its patch changes only `packag
 - Docker regression tests attempted lockfile writes, host receipt reads/writes, access to the Docker socket, and access to a harmless host environment canary. Those attempts were blocked; local HTTP tests still passed. An uncaught lockfile-write attempt failed verification.
 - The demo minimist update passed the revised verifier: both application tests passed, the selected advisory disappeared, and five unrelated lodash advisories remained. The patch SHA-256 was `cd7cdd50fbc90e4ece539286cfb2449ae9f3b27523d3b3089acdd9a8de606683`, matching the original proposal artifact.
 - The local lifecycle rehearsal confirmed `open -> resolved -> open`. It did not merge or change application PR #1.
-- The normal hub suite passed 29 tests; the opt-in Docker check was run separately and passed. Hub CI now runs the Docker regression checks on every push/PR.
+- At the original review, the normal hub suite passed 29 tests; the opt-in Docker check was run separately and passed. Hub CI now runs the Docker regression checks on every push/PR.
 
 The earlier [successful Codex run](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409) remains historical evidence of the proposal and skill read. It predates this verifier change. These checks did not rerun Codex or spend OpenAI API credits.
+
+## Repeatability and progress follow-up
+
+The normal suite now passes 43 tests, with one opt-in Docker check skipped in that command. CI runs the container checks separately. Added checks cover package-group isolation, requiring every grouped advisory to be removed, own-repository/base PR reuse, recurrence timestamps, current-run priority, and usage parsing that ignores quoted JSON. The integration verifier also passed again against exact baseline blobs while the sibling checkout was fixed.
+
+A live reset reopened the existing issue identities without changing first-detected dates. Two simultaneous pending scans both completed. Duplicate package requests reused PR #4 with no proposal job. Dashboard browser checks exercised progress, failed-step links, grouped actions, distinct PR counts, mobile layout, and an API rate-limit fallback. These checks validate the stated paths; they do not claim to exhaust all concurrency or API failure modes.
 
 ## Boundaries checked
 
@@ -38,7 +44,7 @@ The new sandbox uses a digest-pinned Node image, non-root application processes,
 - Containers share the host kernel. This demo uses temporary GitHub-hosted runners; it is not a sandbox for arbitrary hostile multi-tenant workloads. Dependency installation has external network access, and no private-registry credentials are supplied.
 - The skill's completed read command and hash are inspectable in the logs. The pipeline does not attest that a model followed every instruction.
 - A shared Actions concurrency group serializes register writers and now queues up to 100 pending runs; overflow is cancelled. Scheduled scans recover missed notifications; GitHub and registry failures can delay updates.
-- Both fix PRs have since merged, and the notifier-triggered [post-merge scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40812486604) closed all six register findings. The live reset/reopen cycle remains unexercised; local lifecycle tests are separate evidence.
+- Live reset/reopen has now been exercised: [reset PR #3](https://github.com/vc4u2c/vulnerable-node-demo/pull/3) merged, and the [automatic scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40815154161) reopened the same six issues. The subsequent actual Codex fixes and verification are recorded in the [repeat-cycle evidence](implementation-guide.md#verified-repeat-cycle-with-package-grouping). This is a tested demonstration, not a guarantee against future registry or platform changes.
 
 ## Where `no-mistakes` fits
 

@@ -4,6 +4,8 @@
 
 This runbook uses the same two repositories, Apps, and issue identities on every cycle. Routine hub changes go directly to main. The remediation agent always proposes application changes through a PR; review and merge passing fixes. The workflow never merges its own PRs.
 
+**Verified cycle:** reset PR #3 reopened the same six findings; Codex with `gpt-6-luna` generated grouped lodash PR #4 and minimist PR #5. After review and merge, the [automatic scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40816546891) and Pages deployment passed: zero active findings, six resolved, and no open PRs. Start at step 2 to repeat this demonstration; step 1 checks readiness first.
+
 ## 1. Check readiness
 
 From the hub checkout in PowerShell:
