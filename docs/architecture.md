@@ -8,7 +8,74 @@ The central repository owns scanning, the GitHub Issues register, the dashboard,
 
 Solid arrows show data flow or workflow actions. Dotted arrows show authentication or selection. The diagrams describe the configured flow; they do not indicate that every stage has completed successfully.
 
-![System architecture showing the central hub, application repository, two GitHub Apps, npm registry, and OpenAI API](diagrams/architecture.svg)
+```mermaid
+flowchart TB
+  subgraph HUB["CENTRAL REPOSITORY | vc4u2c/github-action-codex"]
+    direction TB
+    scan["Scan and reconcile
+Manual / every 6 hours / dispatch
+npm audit on pinned manifests"]
+    register[("GitHub Issues register
+Repository + advisory + severity
+Status, dates and PR link")]
+    dashboard["GitHub Pages dashboard
+Snapshot of the register"]
+    remediation["Remediate vulnerability
+Manual: central issue number
+Prepare / Codex / Verify / Publish"]
+    scan -->|"create / update / resolve / reopen"| register
+    register -->|"export"| dashboard
+    register -. "select issue" .-> remediation
+  end
+
+  subgraph TARGET["APPLICATION REPOSITORY | vc4u2c/vulnerable-node-demo"]
+    direction TB
+    code["Default branch
+Node app + tests
+package.json + package-lock.json"]
+    pr["Remediation PR
+Application CI tests
+Human review and merge"]
+    notify["notify-hub job
+Runs after a default-branch push
+No source checkout"]
+    pr -->|"merge"| code
+    code -->|"push event"| notify
+  end
+
+  hubapp["REMEDIATION GITHUB APP
+App ID 5411283
+Installed on application repo
+Key stored in central repo"]
+  notifierapp["NOTIFIER GITHUB APP
+App ID 5411289
+Installed on central repo
+Key stored in application repo"]
+  npm["npm registry
+Dependency advisories + packages"]
+  openai["OpenAI API
+Codex model: gpt-6-luna
+OPENAI_API_KEY in central repo"]
+
+  hubapp -. "read token" .-> scan
+  hubapp -. "read / publish tokens" .-> remediation
+  notifierapp -. "Actions write token" .-> notify
+  scan -->|"read exact default-branch commit"| code
+  scan <-->|"audit"| npm
+  remediation <-->|"model requests"| openai
+  remediation -->|"verified patch: create branch + PR"| pr
+  remediation -->|"link PR to finding"| register
+  notify -->|"dispatch scan.yml"| scan
+
+  classDef app fill:#fff3df,stroke:#ad6a12,color:#573908,stroke-width:2px
+  classDef service fill:#eef2ff,stroke:#6574b8,color:#202f65
+  classDef record fill:#dff3eb,stroke:#19745c,color:#104a3d
+  class hubapp,notifierapp app
+  class npm,openai service
+  class register,dashboard record
+  style HUB fill:#f3faf7,stroke:#6caa96,stroke-width:2px
+  style TARGET fill:#f3f7fc,stroke:#7b9abd,stroke-width:2px
+```
 
 [Download PNG](diagrams/architecture.png) | [Open SVG](diagrams/architecture.svg) | [Edit Mermaid source](diagrams/architecture.mmd)
 
@@ -29,7 +96,55 @@ The hub's built-in **`GITHUB_TOKEN`** maintains central issues and dispatches fo
 
 Codex runs in **`remediate.yml` > `propose`**, on a disposable GitHub-hosted Ubuntu runner. The hub's workflow and scripts form the harness. The Codex Action invokes the pinned Codex CLI against an exported copy of the audited application commit.
 
-![Four remediation jobs with separate runners, trusted skill instructions, proposal patch, independent verification, and PR publication](diagrams/remediation-harness.svg)
+```mermaid
+flowchart TB
+  issue["Central issue number
+Allowlisted target configuration"] --> prepare
+  subgraph RUN["remediate.yml | FOUR SEPARATE GITHUB-HOSTED RUNNERS"]
+    direction TB
+    prepare["1. PREPARE
+Read-only target App token
+Fresh audit + audited commit
+Pinned skill text and SHA-256"]
+    propose["2. PROPOSE / CODEX HARNESS
+openai/codex-action + Codex CLI
+remediate-vulnerability skill
+Restricted permissions; drop-sudo
+OpenAI API credential via action"]
+    verify["3. VERIFY
+Apply allowed patch
+npm ci --ignore-scripts
+Application tests + fresh audit
+No OpenAI / target App credentials"]
+    publish["4. PUBLISH
+Match patch digest to receipt
+Target App token: Contents + PR write
+GitHub API creates branch and PR
+No application code execution"]
+    prepare -->|"context + prompt + Git bundle"| propose
+    propose -->|"untrusted proposal.patch"| verify
+    verify -->|"verification.json + patch digest"| publish
+  end
+  skill["Trusted hub SKILL.md
+Full text supplied in prompt
+Versioned by SHA-256"] -. "read before editing" .-> propose
+  evidence["Run evidence
+Skill snapshot + prompt + context
+Codex JSON command logs
+Final report, patch and receipt"]
+  prepare -. "supplied instructions" .-> evidence
+  propose -. "skill-read command + result" .-> evidence
+  verify -. "test / audit result" .-> evidence
+  publish --> pr["PR in application repo
+Linked to central register issue"]
+  classDef trusted fill:#e3f2ec,stroke:#24795f,color:#163f34
+  classDef agent fill:#fff2da,stroke:#b77b1c,color:#5c410d,stroke-width:2px
+  classDef artifact fill:#f1f0fa,stroke:#847ab0,color:#40365e
+  class prepare,verify,publish trusted
+  class propose agent
+  class evidence,skill artifact
+  style RUN fill:#f8fafc,stroke:#8da0b3,stroke-width:2px
+```
 
 [Download PNG](diagrams/remediation-harness.png) | [Open SVG](diagrams/remediation-harness.svg) | [Edit Mermaid source](diagrams/remediation-harness.mmd)
 
@@ -76,7 +191,7 @@ As of October 28, 2026, both GitHub Apps and the model variable are configured. 
 
 ## Updating the diagrams
 
-Edit the `.mmd` sources in [`diagrams/`](diagrams/) and regenerate the SVG and PNG exports with Mermaid CLI 12.0.0. The shared [`mermaid-config.json`](diagrams/mermaid-config.json) preserves the layout and colors. From the repository root:
+The Mermaid blocks above render directly on GitHub. Keep them in sync with the `.mmd` sources in [`diagrams/`](diagrams/). SVG and PNG exports are optional; regenerate them with Mermaid CLI 12.0.0 when needed. The shared [`mermaid-config.json`](diagrams/mermaid-config.json) preserves the layout and colors. From the repository root:
 
 ```sh
 npx --yes --package @mermaid-js/mermaid-cli@12.0.0 mmdc -i docs/diagrams/architecture.mmd -o docs/diagrams/architecture.svg -c docs/diagrams/mermaid-config.json --no-font-embed -b white --size 2400
