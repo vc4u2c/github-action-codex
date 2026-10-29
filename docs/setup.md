@@ -1,138 +1,199 @@
-# Set up the two-repository demo
+# Setup guide
 
-## 1. Publish the repositories
+[Architecture](architecture.md) | [Implementation guide](implementation-guide.md) | [Demo runbook](demo-runbook.md)
 
-The public demo repositories are **[vc4u2c/github-action-codex](https://github.com/vc4u2c/github-action-codex)** and **[vc4u2c/vulnerable-node-demo](https://github.com/vc4u2c/vulnerable-node-demo)**, with **main** as the default branch. Both are published and independent. The [dashboard](https://vc4u2c.github.io/github-action-codex/) is live and the initial scan has populated the register. Continue at step 2 to enable remediation and reset PRs.
+These steps reproduce the two-repository installation. The existing `vc4u2c` demo is already configured; use the [runbook](demo-runbook.md) to operate it. Its fix PR can remain open while you demonstrate the workflow and review evidence.
 
-For a separate installation, replace the owner/repository names below, authenticate the GitHub CLI, then run the following from each corresponding folder after committing its files:
+## What you will configure
 
-```sh
+| Item | Location |
+| --- | --- |
+| Hub repository | Scanner, register, dashboard, and remediation workflow |
+| Application repository | Node.js app, tests, and fix PRs |
+| Remediation GitHub App | Installed on the application; key stored in the hub |
+| Notifier GitHub App | Installed on the hub; key stored in the application |
+| OpenAI API key | Hub Actions secret |
+| GitHub Pages | Hub dashboard, optional |
+
+## 1. Prepare a new workspace
+
+You need Git, Node.js 22 or newer, the GitHub CLI (`gh`), and permission to create repositories and install GitHub Apps under the chosen account. Remediation also needs an OpenAI API project key with available API quota. Scanning and reset do not call OpenAI.
+
+The commands below use **PowerShell**. Keep the same terminal open so the variables remain available. Replace `YOUR_GITHUB_USER_OR_ORG` with the owner of your new repositories. This example keeps the two repository names shown below; choose an account where those names are available.
+
+```powershell
+$DemoOwner = "YOUR_GITHUB_USER_OR_ORG"
+$HubRepo = "$DemoOwner/github-action-codex"
+$AppRepo = "$DemoOwner/vulnerable-node-demo"
 gh auth login -h github.com
-# From github-action-codex:
-gh repo create vc4u2c/github-action-codex --public --source=. --remote=origin --push
-# From vulnerable-node-demo:
-gh repo create vc4u2c/vulnerable-node-demo --public --source=. --remote=origin --push
+
+New-Item -ItemType Directory -Path vulnerability-hub-demo
+Set-Location vulnerability-hub-demo
+git clone https://github.com/vc4u2c/github-action-codex.git
+git clone https://github.com/vc4u2c/vulnerable-node-demo.git
 ```
 
-These commands create public repositories, matching this demo. All checked-in files and vulnerability issues are publicly readable. Use --private instead if your installation needs private repositories. Keep the demo app local; publishing its source does not require hosting the vulnerable application.
+**Checkpoint:** the two repositories are sibling folders. Cloning retains the target's baseline commit and history, which the reset feature needs.
 
-Enable Issues in the hub and GitHub Actions in both repositories. Keep the hub workflow and configuration changes limited to trusted maintainers.
+## 2. Publish your copies and configure the target
 
-Public targets can be scanned immediately without a GitHub App: the scanner uses read-only anonymous GitHub requests when HUB_APP_ID is unset. The hub's built-in workflow token maintains its register. Configure the App for private targets, higher API limits, remediation PRs, and reset PRs.
+Run this only in the new clones from step 1. The commands point their `origin` remotes at your new repositories. They create public repositories, so the source, register issues, and dashboard data are public. For private installations, use `--private` and review Pages availability/access for your account.
 
-## 2. Create the hub GitHub App
+```powershell
+Set-Location vulnerable-node-demo
+git remote remove origin
+gh repo create $AppRepo --public --source=. --remote=origin --push
 
-Under your GitHub account's Developer settings, create a GitHub App. Set a homepage URL to the hub repository; a webhook is unnecessary for this demo.
+Set-Location ../github-action-codex
+npm.cmd run configure -- $DemoOwner
+git add config/targets.json
+git commit -m "Configure application target"
+git remote remove origin
+gh repo create $HubRepo --public --source=. --remote=origin --push
+```
 
-Grant repository permissions:
+The configure command only changes `config/targets.json`. If you use different repository names, edit that file directly. Both repositories should have **main** as their default branch, Actions enabled, and the hub should have Issues enabled. Organization policy must permit the actions and workflow permissions used here.
+
+**Checkpoint:** `config/targets.json` points to your application repo, both repos exist on GitHub, and **Hub CI** passes. The hub has no npm runtime dependencies to install.
+
+## 3. Create the Remediation App
+
+In the chosen account's **Settings > Developer settings > GitHub Apps**, choose **New GitHub App**. Use a unique name such as `YOUR-OWNER-vulnerability-remediator` and the hub repository URL as its homepage.
+
+This App is used for installation authentication. Leave OAuth/user authorization and callback URLs unused, and turn off **Webhook > Active**. For a single-owner installation, choose **Only on this account**. Select these repository permissions:
 
 | Permission | Access |
 | --- | --- |
 | Contents | Read and write |
 | Pull requests | Read and write |
-| Metadata | Read (automatic) |
+| Metadata | Read, automatic |
 
-Install it on the target repository only (and on any additional configured targets). Generate a private key. This key belongs only in the central hub's Actions secrets.
+Create the App. Record its numeric **App ID**, generate a private key, then choose **Install App > Only select repositories > vulnerable-node-demo**.
 
-In **github-action-codex → Settings → Secrets and variables → Actions**, add:
+Store these in the **hub repository**, under **Settings > Secrets and variables > Actions**:
 
 | Kind | Name | Value |
 | --- | --- | --- |
-| Variable | HUB_APP_ID | GitHub App ID |
-| Secret | HUB_APP_PRIVATE_KEY | Complete PEM private key |
-| Secret | OPENAI_API_KEY | OpenAI API project key with model access |
-| Variable, optional | CODEX_MODEL | An available Codex-compatible model; omitted uses the action default |
-| Variable, optional | PUBLISH_DASHBOARD | true only after Pages setup below |
+| Variable | `HUB_APP_ID` | This Remediation App's ID |
+| Secret | `HUB_APP_PRIVATE_KEY` | Its complete downloaded PEM private key |
 
-The workflow requests read-only installation tokens for scans and target export, and write tokens only for publication. Central register writes use the hub's own GITHUB_TOKEN.
+You can use the UI, or these commands from the hub folder. Replace the PEM path with the downloaded file's location; keep the key outside the repository.
 
-OpenAI API usage is billed separately from the local demo. Configure the key in GitHub Secrets; do not put it in source or issue bodies.
+```powershell
+gh variable set HUB_APP_ID --repo $HubRepo --body (Read-Host "Remediation App ID")
+Get-Content -LiteralPath "C:/secure/remediation-app.private-key.pem" -Raw | gh secret set HUB_APP_PRIVATE_KEY --repo $HubRepo
+```
 
-## 3. Configure immediate verification after merge
+**Checkpoint:** the App installation lists the application repository, while its ID/key are configured in the hub. Scan/prepare request read-only tokens; publish/reset request write tokens.
 
-Create a **second, narrowly scoped notifier GitHub App**. This keeps the hub's target-write credential out of the application repository.
+See GitHub's [App registration guide](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app) for the account settings UI.
+
+## 4. Create the Notifier App
+
+Create a second App named, for example, `YOUR-OWNER-vulnerability-notifier`. Use the same homepage and no webhook/OAuth flow. Grant these repository permissions:
 
 | Permission | Access |
 | --- | --- |
 | Actions | Read and write |
 | Contents | Read |
-| Metadata | Read (automatic) |
+| Metadata | Read, automatic |
 
-Install this notifier on the hub repository only. Disable its webhook; notifications are sent by the target workflow.
-
-In **vulnerable-node-demo → Settings → Secrets and variables → Actions**, add:
+Generate its private key and install this App on **github-action-codex only**. Store the following in the **application repository**:
 
 | Kind | Name | Value |
 | --- | --- | --- |
-| Variable | HUB_REPOSITORY | vc4u2c/github-action-codex |
-| Variable | NOTIFIER_APP_ID | Notifier GitHub App ID |
-| Secret | NOTIFIER_APP_PRIVATE_KEY | Notifier PEM private key |
+| Variable | `HUB_REPOSITORY` | `YOUR_OWNER/github-action-codex` |
+| Variable | `NOTIFIER_APP_ID` | This Notifier App's ID |
+| Secret | `NOTIFIER_APP_PRIVATE_KEY` | Its complete PEM private key |
 
-The target workflow runs a separate notification job with no source checkout, after a push to main. It dispatches the central scan even if app tests failed: scan evidence still matters. PR events do not get notifier credentials.
-
-The notifier is optional for initial setup; scheduled and manual scans still verify merged fixes. Without it, resolution occurs on the next scan rather than immediately after merge.
-
-## 4. Configure the target
-
-config/targets.json is already set to vc4u2c/vulnerable-node-demo. For another owner run:
-
-```sh
-npm run configure -- YOUR_OWNER
+```powershell
+gh variable set HUB_REPOSITORY --repo $AppRepo --body $HubRepo
+gh variable set NOTIFIER_APP_ID --repo $AppRepo --body (Read-Host "Notifier App ID")
+Get-Content -LiteralPath "C:/secure/notifier-app.private-key.pem" -Raw | gh secret set NOTIFIER_APP_PRIVATE_KEY --repo $AppRepo
 ```
 
-Each entry contains id, repository, directory, and ecosystem. directory identifies the folder holding both package.json and package-lock.json. Install the hub App on every listed target. Multiple owners need separate App installation jobs; this demo deliberately rejects that configuration.
+**Checkpoint:** the Notifier App installation lists the hub, while its credentials are stored in the application. The application workflow uses this App to request a hub scan after a default-branch push.
 
-## 5. Run the first scan
+This App is optional if manual/scheduled rescans are acceptable. Include it to demonstrate automatic verification after merge. GitHub creates each workflow's built-in `GITHUB_TOKEN`; you do not add it as a secret.
 
-In the hub's Actions tab, run **Scan and reconcile register** on main.
+## 5. Configure the Codex model and API key
 
-Expected results:
+Create an [OpenAI API key](https://platform.openai.com/api-keys) in an organization with available [API billing/quota](https://platform.openai.com/settings/organization/billing/overview). Store it in the hub and select the model:
 
-- One central issue per package/advisory/manifest identity, labeled vulnerability-register.
-- A readable Actions summary and a vulnerability-dashboard artifact containing site/ and raw scan evidence.
-- Repeating the scan updates existing issues.
-- A scan failure is visible and preserves existing findings.
+```powershell
+gh secret set OPENAI_API_KEY --repo $HubRepo
+gh variable set CODEX_MODEL --repo $HubRepo --body gpt-6-luna
+```
 
-The dependencies are deliberately old. On October 21, 2026 the demo produced six advisories, including a critical minimist advisory. Counts and severity may change with the advisory database.
+Paste the key at the hidden `gh secret set` prompt. The model must be available to that key; `gpt-6-luna` is the model used in the verified example. See the [official OpenAI documentation](https://learn.chatgpt.com/docs/github-action) for the Codex Action's API-key setup.
 
-## 6. Open and merge a remediation PR
+**Checkpoint:** the hub has these settings. Listing secrets shows names, not values:
 
-Choose a central issue, such as the minimist finding. Run **Remediate vulnerability**, supplying the central issue number.
+```powershell
+gh secret list --repo $HubRepo
+gh variable list --repo $HubRepo
+```
 
-The workflow rescans the target, invokes the remediation skill through Codex, validates the resulting patch on a separate runner, and opens a PR in the target repository. Its link appears in the central issue. A subsequent scan refreshes the dashboard.
+Expected hub secrets: `HUB_APP_PRIVATE_KEY`, `OPENAI_API_KEY`. Expected hub variables: `HUB_APP_ID`, `CODEX_MODEL`.
 
-Review the PR and its **Application CI / test** result. Configure branch protection to require that check and a review if desired. The automation never merges PRs.
+## 6. Enable the dashboard
 
-After merge, the notifier dispatches a scan of the target default branch. The register entry closes only if the advisory is absent. Other findings remain open. Reverting the dependency update reopens the existing entry on the next scan.
+In the hub, open **Settings > Pages > Build and deployment**, then select **GitHub Actions** as the source. Set:
 
-An already open remediation PR is reused; a closed unmerged PR allows a new attempt. A failed or empty Codex proposal creates no PR and leaves the finding open; details remain in the workflow run.
+```powershell
+gh variable set PUBLISH_DASHBOARD --repo $HubRepo --body true
+```
 
-## Repeat without recreating repositories
+The existing scan workflow handles deployment with `pages: write` and `id-token: write`. The expected project-site URL is `https://YOUR_OWNER.github.io/github-action-codex/` unless you configure a custom domain.
 
-Run **Reset demo** in the hub with target_id=node-demo after completing a remediation demonstration. Review and merge the reset PR; the central scanner will reopen the same finding issues. Reset preserves the GitHub configuration, issue history, and application workflows. See [the repeatable demo runbook](demo-runbook.md) for both local rehearsal and the GitHub presentation sequence.
+If you do not want hosting, leave `PUBLISH_DASHBOARD` unset. The scan still produces an Actions summary and downloadable dashboard artifact. A private source repository does not by itself guarantee a private Pages site.
 
-## 7. Optional hosted dashboard
+**Checkpoint:** Pages is configured to use Actions. The first scan in the next step creates the site.
 
-The Actions artifact and job summary work without hosting. To publish a browser dashboard:
+## 7. Run the first scan
 
-1. In the hub's Pages settings, select **GitHub Actions** as the build source.
-2. Confirm that Pages is available for your repository/account and that the resulting site's access rules fit your data.
-3. Set the hub Actions variable **PUBLISH_DASHBOARD=true**.
-4. Run the scan workflow. The pages job publishes the site and provides its URL.
+```powershell
+gh workflow run scan.yml --repo $HubRepo --ref main
+gh run list --repo $HubRepo --workflow scan.yml --limit 5
+gh issue list --repo $HubRepo --label vulnerability-register
+```
 
-Do not assume a private repository makes its Pages site private. The generated dashboard includes repository names, advisories, and issue links. The default is artifact-only until you enable publication.
+Wait for **Scan and reconcile register** to finish in the hub's Actions tab. Expect central issues, a run summary, the **vulnerability-dashboard** artifact, and a Pages deployment if enabled. Each issue should show package, severity, repository, dates, and `open` status.
 
-To view a downloaded artifact locally, enter its site folder and run a static HTTP server, for example python -m http.server 4173 --bind 127.0.0.1.
+**Checkpoint:** rerunning the scan updates the existing issues. Advisory counts follow the live npm database; they are not fixed demo data. If your cloned application's main branch already contains a fix, use the [reset workflow](demo-runbook.md#reset-for-the-next-demo) to restore its vulnerable baseline first.
+
+## 8. Create a fix PR
+
+Choose a central finding with an available fix, then enter its issue number:
+
+```powershell
+$IssueNumber = Read-Host "Central vulnerability issue number"
+gh workflow run remediate.yml --repo $HubRepo --ref main -f "issue_number=$IssueNumber"
+```
+
+Follow **prepare > propose > verify > publish** in the hub. The propose job calls the OpenAI API. Inspect its completed `SKILL_READ` command, the verifier result, and the PR created in the application repository.
+
+**Checkpoint:** the PR changes the dependency files, application CI passes, and the central issue/dashboard show `pr-open` with a PR link. An existing open remediation PR is reused; selecting the same finding again does not create another fix. You can leave this PR open for the demo.
+
+## 9. Merge and verify closure when ready
+
+Review the PR diff and passing application CI. When ready to demonstrate closure, merge it in the application repository. The default-branch push runs application CI and its separate `notify-hub` job, which requests the central scan.
+
+**Checkpoint:** after a successful scan confirms the advisory is absent, the issue is closed with status `resolved` and the dashboard reflects it. If no notifier is configured, run `scan.yml` manually. If the scan fails or the advisory remains, the finding stays open.
+
+Use the [demo runbook](demo-runbook.md) to restore the vulnerable baseline and repeat the cycle without recreating repositories or Apps.
 
 ## Troubleshooting
 
-- **App token creation fails:** verify App ID, PEM key, installation owner, selected repositories, and requested permissions.
-- **Scan cannot read a lockfile:** commit both manifests to the target's default branch; use lockfile version 2 or 3.
-- **Registry failure:** findings remain open. Rerun the scan after connectivity recovers.
-- **Codex fails:** verify OPENAI_API_KEY and optional CODEX_MODEL; read the propose job. Named permission profiles require a compatible Codex CLI.
-- **Patch rejected:** read verify logs. The demo supports only the documented file types and dependency-field changes. Expand the contract intentionally for a different application.
-- **No immediate close after merge:** check HUB_REPOSITORY and notifier credentials; run the central scanner manually.
-- **Dashboard stale:** the dashboard is a snapshot of the last exported scan, with a visible timestamp. Rerun the scan.
-- **GitHub CLI login expired:** run gh auth login -h github.com. This is unrelated to the repository GitHub App credentials.
-
-The action references and Codex CLI are pinned by the supplied version-lock utility during initial setup. Review upgrades deliberately because permission-profile support is evolving.
+| Symptom | What to check |
+| --- | --- |
+| App-token creation fails | Correct App ID and matching PEM, correct installation repository, and repository permissions |
+| Scan cannot read manifests | Both npm files are committed on main; directory is correct; lockfile version is 2 or 3 |
+| API quota error | API organization/project behind the saved key has available quota; buying credits under another organization will not fund this key |
+| Model unavailable | `CODEX_MODEL` is available to the saved API key |
+| Codex fails on `/run/dbus/system_bus_socket` | Keep the remediation runner pin at `ubuntu-24.04`; see [runner details](implementation-guide.md#5-the-codex-harness-and-remediation-skill) |
+| Codex reports HTTP-test socket errors | Read its report and the separate verifier result; a PR is published only if independent verification passes |
+| Verify rejects the patch | Inspect its log for unsupported paths, package changes, test failures, or remaining/new advisories |
+| Issue does not close after merge | Check application `notify-hub`, then the hub scan; the scan must confirm the advisory is absent |
+| Dashboard is stale | Check the scan and Pages jobs plus the snapshot timestamp |
+| Local GitHub CLI login expired | Run `gh auth login -h github.com`; this is separate from App credentials in Actions |

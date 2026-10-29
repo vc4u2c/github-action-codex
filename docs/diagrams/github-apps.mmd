@@ -1,0 +1,3 @@
+flowchart LR
+  hub["Hub repository"] -->|"Remediation App<br/>Read code and open PRs"| app["Application repository"]
+  app -->|"Notifier App<br/>Request a hub scan"| hub
