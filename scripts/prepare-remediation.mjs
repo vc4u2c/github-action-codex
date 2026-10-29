@@ -17,24 +17,21 @@ const finding = scan.findings.find(f => f.key === record.key);
 async function output(values) {
   if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, Object.entries(values).map(([k,v]) => k + '=' + v).join('\n') + '\n');
 }
-async function requestScan() {
-  const repo = await register.get('/repos/' + hub);
-  await register.post('/repos/' + hub + '/actions/workflows/scan.yml/dispatches', { ref: repo.default_branch });
-}
 if (!finding) {
-  console.log('Finding is absent in a fresh scan. Requesting register reconciliation.');
-  await requestScan(); await output({ ready: 'false' });
+  console.log('Finding is absent in a fresh scan. The completion workflow will refresh the register.');
+  await output({ ready: 'false' });
 } else {
   const open = await source.list('/repos/' + target.repository + '/pulls?state=open');
   const records = await readRegister(register, hub);
   const findings = groupedFindings(finding, scan.findings);
   const keys = new Set(findings.map(f => f.key));
   const related = records.filter(r => keys.has(r.key));
+  if (related.length !== findings.length) throw new Error('Package advisories changed since the register scan. Wait for the completion refresh, then request again.');
   const existing = existingFix(open, finding, related, scan.branch);
   if (existing) {
     const linked = related.filter(r => r.remediation?.number === existing.number || r.key === record.key);
     await saveRegister(register, hub, linked.map(r => ({ ...r, status: 'pr-open', remediation: { ...r.remediation, number: existing.number, url: existing.html_url, state: 'open' } })));
-    await requestScan(); await output({ ready: 'false' }); console.log('Existing PR: ' + existing.html_url);
+    await output({ ready: 'false' }); console.log('Existing PR: ' + existing.html_url);
   } else {
     const skill = await readSkill();
     const { content, ...skillIdentity } = skill;

@@ -23,7 +23,6 @@ jobs:
     permissions:
       contents: read
       issues: write
-      actions: write
     outputs:
       ready: ${{ steps.prepare.outputs.ready }}
       repository: ${{ steps.prepare.outputs.repository }}
@@ -204,7 +203,6 @@ jobs:
     permissions:
       contents: read
       issues: write
-      actions: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:

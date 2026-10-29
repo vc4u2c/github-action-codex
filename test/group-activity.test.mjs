@@ -32,7 +32,7 @@ test('progress follows package requests, failures, PRs, and recurrence without r
  const records=[{...a,issueNumber:1,status:'open',firstSeen:'2026-01-01'},{...b,issueNumber:2,status:'open',firstSeen:'2026-01-01'}];
  const r={id:123,attempt:1,issueNumber:1,status:'queued',createdAt:'2026-02-01',url:'https://github.com/owner/hub/actions/runs/123'};
  assert.equal(progressFor(records[1],records,[r]).label,'Requested / queued');
- assert.equal(progressFor(records[1],records,[{...r,status:'in_progress'}]).label,'Running');
+ assert.equal(progressFor(records[1],records,[{...r,status:'in_progress'},{...r,id:124,createdAt:'2026-02-02'}]).label,'Running');
  const failure={...r,status:'completed',conclusion:'failure',jobs:[{name:'verify',conclusion:'failure',step:'Audit and tests'}]};
  assert.match(progressFor(records[1],records,[failure]).detail,/verify.*Audit/);
  assert.equal(progressFor({...records[1],status:'pr-open'},records,[failure]).label,'PR ready');

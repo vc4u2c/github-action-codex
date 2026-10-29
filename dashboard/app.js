@@ -76,7 +76,7 @@ async function boot() {
     for (const run of runs.slice(0,20)) {
       const row=node('tr'), name=node('td'); name.append(link('#'+run.id+' / attempt '+run.attempt,run.url),node('small','Register #'+run.issueNumber));
       const result=node('td');result.append(badge(run.conclusion || run.status,run.conclusion==='failure'?'failed':run.conclusion==='success'?'resolved':'running'));
-      const usage=node('td'); usage.append(node('span',run.usage ? run.usage.inputTokens.toLocaleString()+' input / '+run.usage.outputTokens.toLocaleString()+' output' : 'Unavailable'),node('small',run.usage ? run.usage.cachedInputTokens.toLocaleString()+' cached input · '+(run.model || 'model in logs') : 'See run logs; this does not mean zero usage'));
+      const usage=node('td'); usage.append(node('span',run.usage ? run.usage.inputTokens.toLocaleString()+' input / '+run.usage.outputTokens.toLocaleString()+' output' : run.modelSkipped ? 'Not called' : 'Unavailable'),node('small',run.usage ? run.usage.cachedInputTokens.toLocaleString()+' cached input · '+(run.model || 'model in logs') : run.modelSkipped ? 'Proposal job skipped; existing PR or no current finding' : 'See run logs; this does not mean zero usage'));
       const duration=node('td',run.durationSeconds==null?'—':Math.round(run.durationSeconds/60*10)/10+' min');
       row.append(name,result,usage,duration);$('#runs').append(row);
     }

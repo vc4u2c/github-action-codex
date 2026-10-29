@@ -18,7 +18,7 @@ if (!Array.isArray(receipt.resolvedKeys) || required.some(key => !receipt.resolv
     receipt.resolvedKeys.some(key => !context.before.some(f => f.key === key))) throw new Error('Receipt is missing verified group findings');
 const records = await readRegister(register, context.hub);
 const linked = records.filter(r => r.repository === context.target.repository && r.manifest === context.finding.manifest && receipt.resolvedKeys.includes(r.key));
-if (!linked.some(r => r.key === context.finding.key)) throw new Error('Selected register entry changed identity');
+if (required.some(key => !linked.some(r => r.key === key))) throw new Error('Selected register entry changed identity');
 const baseCommit = await source.get(root + '/git/commits/' + context.sha);
 const tree = [];
 for (const file of checked.files) {
@@ -42,9 +42,9 @@ catch (error) {
 }
 const prs = await source.list(root + '/pulls?state=open&head=' + encodeURIComponent(context.target.repository.split('/')[0] + ':' + context.branch));
 const pr = prs[0] || await source.post(root + '/pulls', {
-  title: 'fix: remediate ' + context.finding.package + ' (' + required.length + ' advisories)',
+  title: 'fix: remediate ' + context.finding.package + ' (' + required.length + (required.length === 1 ? ' advisory)' : ' advisories)'),
   head: context.branch, base: context.base,
-  body: 'Addresses these verified register findings:\n' + linked.map(r => '- ' + r.advisoryId + ': ' + r.issueUrl).join('\n') + '.\n\n' +
+  body: 'Addresses these verified register findings:\n' + linked.map(r => '- ' + r.advisoryId + ': ' + r.issueUrl).join('\n') + '\n\n' +
     'Codex applied the central remediation skill to the dependency finding at commit ' + context.sha + '.\n\n' +
     'Skill: ' + context.skill.name + ' (`' + context.skill.sha256 + '`). ' +
     'Inspect the workflow logs for the skill-read command; the remediation-context and codex-report artifacts preserve the supplied instructions and final response.\n\n' +
@@ -59,5 +59,4 @@ const record = decodeRecord(issue);
 if (record?.key !== context.finding.key) throw new Error('Register entry changed identity');
 await saveRegister(register, context.hub, linked.map(r => ({ ...r, status: 'pr-open', remediation: { number: pr.number, url: pr.html_url, state: 'open', groupKey: context.groupKey, resolvedKeys: receipt.resolvedKeys, patchSha256: checked.patchSha256 } })));
 console.log('Remediation PR: ' + pr.html_url);
-const hubRepo = await register.get('/repos/' + context.hub);
-await register.post('/repos/' + context.hub + '/actions/workflows/scan.yml/dispatches', { ref: hubRepo.default_branch });
+// The completion workflow refreshes the snapshot for every outcome.

@@ -22,6 +22,8 @@ data = yaml.load((root / '.github/workflows/remediate.yml').read_text(), Loader=
 assert data['jobs']['publish']['needs'] == ['prepare', 'verify']
 assert data['jobs']['propose']['permissions'] == {'contents': 'read'}
 assert data['jobs']['verify']['permissions'] == {'contents': 'read'}
+assert data['jobs']['prepare']['permissions'] == {'contents': 'read', 'issues': 'write'}
+assert data['jobs']['publish']['permissions'] == {'contents': 'read', 'issues': 'write'}
 assert list(data['on']) == ['workflow_dispatch']
 codex = next(step['with'] for step in data['jobs']['propose']['steps'] if step.get('uses', '').startswith('openai/codex-action@'))
 assert codex.get('allow-bot-users') == 'github-actions[bot]'

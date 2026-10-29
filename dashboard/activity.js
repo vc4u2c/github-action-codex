@@ -14,8 +14,9 @@ export function progressFor(finding, findings, runs) {
   const base = finding.status === 'resolved' ? {label:'Resolved',kind:'resolved'} : finding.status === 'pr-open' ? {label:'PR ready',kind:'pr-open'} : null;
   const group=new Set(findings.filter(f=>packageScope(f)===packageScope(finding)).map(f=>f.issueNumber));
   const since=Date.parse(finding.cycleStartedAt || finding.firstSeen || 0);
+  const rank=r=>r.status==='in_progress'?0:r.status==='completed'?2:1;
   const run=runs.filter(r=>group.has(r.issueNumber) && Date.parse(r.createdAt)>=since)
-    .sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt) || b.id-a.id)[0];
+    .sort((a,b)=>rank(a)-rank(b) || Date.parse(b.createdAt)-Date.parse(a.createdAt) || b.id-a.id)[0];
   if (base) return {...base,run};
   if (!run) return {label:finding.status==='awaiting-verification'?'Verifying merge':'Not requested',kind:'open'};
   if (run.status!=='completed') {
