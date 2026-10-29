@@ -1,0 +1,66 @@
+flowchart TB
+  subgraph HUB["CENTRAL REPOSITORY | vc4u2c/github-action-codex"]
+    direction TB
+    scan["Scan and reconcile
+Manual / every 6 hours / dispatch
+npm audit on pinned manifests"]
+    register[("GitHub Issues register
+Repository + advisory + severity
+Status, dates and PR link")]
+    dashboard["GitHub Pages dashboard
+Snapshot of the register"]
+    remediation["Remediate vulnerability
+Manual: central issue number
+Prepare / Codex / Verify / Publish"]
+    scan -->|"create / update / resolve / reopen"| register
+    register -->|"export"| dashboard
+    register -. "select issue" .-> remediation
+  end
+
+  subgraph TARGET["APPLICATION REPOSITORY | vc4u2c/vulnerable-node-demo"]
+    direction TB
+    code["Default branch
+Node app + tests
+package.json + package-lock.json"]
+    pr["Remediation PR
+Application CI tests
+Human review and merge"]
+    notify["notify-hub job
+Runs after a default-branch push
+No source checkout"]
+    pr -->|"merge"| code
+    code -->|"push event"| notify
+  end
+
+  hubapp["REMEDIATION GITHUB APP
+App ID 5411283
+Installed on application repo
+Key stored in central repo"]
+  notifierapp["NOTIFIER GITHUB APP
+App ID 5411289
+Installed on central repo
+Key stored in application repo"]
+  npm["npm registry
+Dependency advisories + packages"]
+  openai["OpenAI API
+Codex model: gpt-6-luna
+OPENAI_API_KEY in central repo"]
+
+  hubapp -. "read token" .-> scan
+  hubapp -. "read / publish tokens" .-> remediation
+  notifierapp -. "Actions write token" .-> notify
+  scan -->|"read exact default-branch commit"| code
+  scan <-->|"audit"| npm
+  remediation <-->|"model requests"| openai
+  remediation -->|"verified patch: create branch + PR"| pr
+  remediation -->|"link PR to finding"| register
+  notify -->|"dispatch scan.yml"| scan
+
+  classDef app fill:#fff3df,stroke:#ad6a12,color:#573908,stroke-width:2px
+  classDef service fill:#eef2ff,stroke:#6574b8,color:#202f65
+  classDef record fill:#dff3eb,stroke:#19745c,color:#104a3d
+  class hubapp,notifierapp app
+  class npm,openai service
+  class register,dashboard record
+  style HUB fill:#f3faf7,stroke:#6caa96,stroke-width:2px
+  style TARGET fill:#f3f7fc,stroke:#7b9abd,stroke-width:2px
