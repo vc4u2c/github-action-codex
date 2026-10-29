@@ -22,7 +22,12 @@ data = yaml.load((root / '.github/workflows/remediate.yml').read_text(), Loader=
 assert data['jobs']['publish']['needs'] == ['prepare', 'verify']
 assert data['jobs']['propose']['permissions'] == {'contents': 'read'}
 assert data['jobs']['verify']['permissions'] == {'contents': 'read'}
-assert 'pull_request_target' not in data['on']
+assert list(data['on']) == ['workflow_dispatch']
+codex = next(step['with'] for step in data['jobs']['propose']['steps'] if step.get('uses', '').startswith('openai/codex-action@'))
+assert codex.get('allow-bot-users') == 'github-actions[bot]'
+assert codex.get('allow-users', '') == ''
+assert codex.get('allow-bots', 'false') == 'false'
+assert codex['safety-strategy'] == 'drop-sudo'
 print('Remediation job boundaries verified')
 
 request = yaml.load((root / '.github/workflows/request-fix.yml').read_text(), Loader=yaml.BaseLoader)
