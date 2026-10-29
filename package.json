@@ -15,6 +15,11 @@
     "demo:reset": "node scripts/local-demo-cycle.mjs reset",
     "demo:fix": "node scripts/local-demo-cycle.mjs fix",
     "preflight": "node scripts/preflight.mjs",
-    "demo:verify": "node scripts/verify-demo.mjs"
+    "demo:verify": "node scripts/verify-demo.mjs",
+    "dashboard:secure": "node scripts/dashboard-server.mjs",
+    "dashboard:setup": "node scripts/setup-dashboard-app.mjs"
+  },
+  "dependencies": {
+    "fflate": "0.8.3"
   }
 }

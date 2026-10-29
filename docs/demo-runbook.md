@@ -38,6 +38,8 @@ The application's push CI then runs `notify-hub`. Wait for its central **Scan an
 
 ## 3. Request one package fix
 
+If using the [protected dashboard](dashboard-access.md), sign in at its configured URL and click **Request fix**. The row's issue number is submitted automatically, after server authorization. The manual steps below apply to the public GitHub Pages mode.
+
 On the dashboard, choose **Request fix** beside an open package. GitHub opens **Remediate vulnerability**. Click **Run workflow**, keep `main`, enter the issue number shown below the dashboard button, and submit. Write access to the hub is required.
 
 Equivalent PowerShell:
@@ -54,6 +56,8 @@ Alternatively, open a register issue and tick **Request a Codex fix**. The liste
 A fix groups advisories by repository + manifest + package. Selecting another advisory from the same group reuses the open package PR rather than spending another model call. The verifier requires all advisories selected in that package group to disappear; unrelated packages stay for a later request.
 
 ## 4. Show the skill, usage, and independent verification
+
+Expand **Evidence** in the dashboard's **Validation** column. **Proposal** shows independent verification for the current cycle and PR commit; **Main branch** shows whether the latest scan still detects the advisory. The activity table's **Independent validation** column links the verifier job and explicitly identifies skipped verification.
 
 In **propose -> Run Codex with the remediation skill**, find the completed `read-remediation-skill.mjs` command, exit code 0, and `SKILL_READ name=remediate-vulnerability sha256=...`. Compare the hash with prepare's `SKILL_CONFIGURED`. A skill name appearing in the prompt alone is not execution evidence.
 

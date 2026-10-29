@@ -1,3 +1,4 @@
+import { publicationEvidence } from '../lib/validation-evidence.mjs';
 import { readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { GitHub } from '../lib/github.mjs';
@@ -33,13 +34,16 @@ for (const file of checked.files) {
 }
 const newTree = await source.post(root + '/git/trees', { base_tree: baseCommit.tree.sha, tree });
 const commit = await source.post(root + '/git/commits', { message: 'fix: remediate ' + context.finding.package + ' ' + context.finding.advisoryId, tree: newTree.sha, parents: [context.sha] });
+let publishedSha = commit.sha;
 try { await source.post(root + '/git/refs', { ref: 'refs/heads/' + context.branch, sha: commit.sha }); }
 catch (error) {
   if (!error.message.includes(': 422')) throw error;
   const ref = await source.get(root + '/git/ref/heads/' + context.branch);
   const existing = await source.get(root + '/git/commits/' + ref.object.sha);
   if (existing.tree.sha !== newTree.sha || existing.parents[0]?.sha !== context.sha) throw new Error('Existing remediation branch differs; refusing to overwrite');
+  publishedSha = ref.object.sha;
 }
+const validation = publicationEvidence(context, receipt, checked, publishedSha, process.env);
 const prs = await source.list(root + '/pulls?state=open&head=' + encodeURIComponent(context.target.repository.split('/')[0] + ':' + context.branch));
 const pr = prs[0] || await source.post(root + '/pulls', {
   title: 'fix: remediate ' + context.finding.package + ' (' + required.length + (required.length === 1 ? ' advisory)' : ' advisories)'),
@@ -57,6 +61,6 @@ const pr = prs[0] || await source.post(root + '/pulls', {
 const issue = await register.get('/repos/' + context.hub + '/issues/' + context.issueNumber);
 const record = decodeRecord(issue);
 if (record?.key !== context.finding.key) throw new Error('Register entry changed identity');
-await saveRegister(register, context.hub, linked.map(r => ({ ...r, status: 'pr-open', remediation: { number: pr.number, url: pr.html_url, state: 'open', groupKey: context.groupKey, resolvedKeys: receipt.resolvedKeys, patchSha256: checked.patchSha256 } })));
+await saveRegister(register, context.hub, linked.map(r => ({ ...r, status: 'pr-open', remediation: { number: pr.number, url: pr.html_url, state: 'open', headSha: publishedSha, validation, groupKey: context.groupKey, resolvedKeys: receipt.resolvedKeys, patchSha256: checked.patchSha256 } })));
 console.log('Remediation PR: ' + pr.html_url);
 // The completion workflow refreshes the snapshot for every outcome.

@@ -3,3 +3,7 @@
 .links .request-fix{display:inline-block;padding:8px 12px;border-radius:6px;background:var(--accent);color:#fff;font-weight:600;white-space:nowrap}.request-fix:focus-visible{outline:2px solid #48a4aa;outline-offset:3px}
 
 .running{background:#e7f4fb;color:#1b6685}.failed{background:#ffe7e7;color:#a91b2e}.activity{min-width:145px}.activity small{max-width:200px}.activity a{display:block;margin-top:8px}button{font:inherit;font-size:12px;padding:10px 14px;border:1px solid #b6cdd2;border-radius:7px;color:var(--accent);background:#fff;cursor:pointer;white-space:nowrap}button:disabled{opacity:.55;cursor:wait}button:focus-visible{outline:2px solid #48a4aa;outline-offset:3px}
+
+.validation{min-width:170px}.validation>div+div{margin-top:14px}.validation summary{cursor:pointer;font-size:11px;color:var(--accent);margin:6px 0}.validation a{display:block;margin:5px 0}
+
+.account{display:flex;gap:12px;align-items:center;flex-wrap:wrap}button.request-fix{font:inherit;cursor:pointer}#request-status{padding:16px;border:1px solid var(--line);border-radius:8px;background:#e9f1fa;font-size:13px}

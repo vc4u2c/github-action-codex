@@ -31,7 +31,7 @@ flowchart TB
 
 **The scanner closes the issue only after confirming the advisory is absent.** Scan failures preserve previous findings. If the vulnerability returns, the same issue reopens.
 
-## Why there are two GitHub Apps
+## GitHub Apps
 
 ```mermaid
 flowchart LR
@@ -46,13 +46,20 @@ flowchart LR
 
 The installation is on the repository the App needs to access. Its key is stored in the repository whose workflow uses it. [Setup](setup.md#3-create-the-remediation-app) lists the exact permissions and secret names.
 
-The hub's built-in `GITHUB_TOKEN` updates its own issues. Pages deployment uses the workflow's Pages permissions. Neither requires a third custom App.
+The hub's built-in `GITHUB_TOKEN` updates its own issues. Pages deployment uses the workflow's Pages permissions. The optional protected dashboard adds a separate Dashboard App for sign-in, reading scan artifacts and authorized workflow dispatch. Its OAuth client secret is stored on the dashboard host, and it is installed only on the hub.
 
 ## Where Codex and the dashboard run
 
 Codex runs in the hub's `remediate.yml` workflow on a temporary GitHub-hosted Ubuntu runner. It reads the trusted `remediate-vulnerability` skill and calls the OpenAI API using the hub's `OPENAI_API_KEY`. Verification and PR publication run in separate jobs.
 
-The dashboard is a static GitHub Pages site displaying the latest register snapshot. The authoritative records are GitHub Issues; there is no separate database or always-running backend in this demo.
+The public dashboard is a static GitHub Pages site displaying the latest register snapshot. Protected mode uses a small Node server with GitHub sign-in and direct fix requests; it reads scan artifacts with the signed-in user's App token. GitHub Issues remains the authoritative register. See [access setup](dashboard-access.md).
+
+```mermaid
+flowchart LR
+  user["Allowed GitHub user"] -->|"Sign in"| dashboard["Protected dashboard<br/>Node server"]
+  dashboard -->|"Dashboard App user token<br/>Read evidence / request selected fix"| hub["Hub Actions and register"]
+  hub -->|"Existing remediation workflow"| pr["Application PR"]
+```
 
 ## Repeat the demo
 

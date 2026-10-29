@@ -21,7 +21,7 @@ for (const target of targets) {
     const current = await source.get('/repos/' + target.repository + '/commits/' + encodeURIComponent(result.branch));
     if (current.sha !== result.sha) throw new Error('Default branch moved during scan; retry required');
     const { report, ...scan } = result;
-    scans.push(scan);
+    scans.push({ ...scan, runUrl: process.env.GITHUB_RUN_ID ? 'https://github.com/' + hub + '/actions/runs/' + process.env.GITHUB_RUN_ID : null });
   } catch (error) {
     scans.push({ target, success: false, scannedAt: new Date().toISOString(), error: error.message });
   }
@@ -31,7 +31,7 @@ const configured = new Set(targets.map(t => t.repository.toLowerCase()));
 const refreshed = [];
 for (const record of previous) {
   try { refreshed.push(...(configured.has(record.repository.toLowerCase()) ? await refreshPullRequests(source, [record]) : [record])); }
-  catch { refreshed.push(record); }
+  catch { refreshed.push({ ...record, remediation: record.remediation ? { ...record.remediation, headSha: null } : record.remediation }); }
 }
 const findings = await saveRegister(register, hub, reconcile(refreshed, scans));
 let activity;

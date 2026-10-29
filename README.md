@@ -8,7 +8,8 @@ A working demo of a central repository that finds dependency vulnerabilities in 
 
 | Guide | What it explains |
 | --- | --- |
-| [Architecture](docs/architecture.md) | The two repositories, simple Mermaid diagrams, and the two GitHub Apps |
+| [Architecture](docs/architecture.md) | The repositories, simple Mermaid diagrams, and GitHub Apps |
+| [Dashboard sign-in and validation](docs/dashboard-access.md) | Protected mode, direct fix requests, and validation evidence |
 | [Setup](docs/setup.md) | How to reproduce the installation, with commands and checkpoints |
 | [Implementation](docs/implementation-guide.md) | What was built, how the code works, credentials, and verified run evidence |
 | [Five-minute demo card](docs/demo-quickstart.md) | Presenter sequence and talking points |
@@ -35,6 +36,8 @@ The hub owns the workflows, GitHub Issues register, dashboard, and remediation s
 
 On the [dashboard](https://vc4u2c.github.io/github-action-codex/), choose **Request fix** to open GitHub Actions. Click **Run workflow**, enter the issue number shown below the dashboard button, and click **Run workflow** to start. The issue checkbox remains available as an alternative. You need write access to the hub. The workflow checks authorization, groups advisories for the package, runs Codex and independent verification, and opens one PR linked to every verified finding. The dashboard shows run progress, failed steps, and token usage. Findings that already have an open fix show **Review PR**.
 
+The [protected dashboard](docs/dashboard-access.md) adds GitHub sign-in and a direct **Request fix** button that sends the selected issue automatically. The public Pages mode keeps the native GitHub workflow form. Both modes show proposal validation separately from the latest main-branch audit.
+
 ## Try the local rehearsal
 
 Install Git and Node.js 22 or newer. Keep both repositories beside each other:
@@ -48,6 +51,7 @@ Repos/
 From `github-action-codex`:
 
 ```sh
+npm ci --ignore-scripts
 npm test
 npm run demo:reset
 npm run dashboard
