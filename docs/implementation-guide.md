@@ -86,7 +86,7 @@ Each stage uses a separate runner:
 | --- | --- | --- |
 | **Prepare** | Validate the issue against the target configuration, audit again, and reuse an existing open remediation PR when present | Read-only application App token. Produces an audited Git bundle, context, prompt, and skill snapshot |
 | **Propose** | Restore that exact commit and run `openai/codex-action` with the remediation skill | OpenAI API credential through the Action; no target App key/write token. Produces an untrusted patch and Codex report |
-| **Verify** | Apply the patch on a fresh runner, validate allowed changes, install dependencies, run tests, and audit again | No OpenAI or target App credentials. Produces a receipt tied to the patch SHA-256 |
+| **Verify** | Apply and audit the patch on a fresh runner, then install dependencies and run tests in restricted containers | No OpenAI or target App credentials. Produces a receipt tied to the patch SHA-256 and records the verification image |
 | **Publish** | Check the receipt and patch digest, then create the commit, branch, and PR using GitHub APIs | Application App token with Contents/PR write. Links the PR to the register and requests a scan; executes no application code |
 
 The implementation lives in [`prepare-remediation.mjs`](../scripts/prepare-remediation.mjs), [`verify-remediation.mjs`](../scripts/verify-remediation.mjs), [`publish-remediation.mjs`](../scripts/publish-remediation.mjs), and [`lib/remediation.mjs`](../lib/remediation.mjs).
@@ -94,6 +94,10 @@ The implementation lives in [`prepare-remediation.mjs`](../scripts/prepare-remed
 The trusted skill is [`.agents/skills/remediate-vulnerability/SKILL.md`](../.agents/skills/remediate-vulnerability/SKILL.md). It directs Codex to make a focused dependency update, preserve registry lockfile integrity, test the result, and report remaining findings. The prompt includes the full skill and requests that Codex read it before editing.
 
 The verifier permits dependency-related `package.json` changes, `package-lock.json`, and `.mjs` files under `src/` and `test/`. It rejects changes to workflows/instructions, unsafe file modes, removed test files, an unfixed selected advisory, and new advisory identities. Existing unrelated findings may remain. Human review is still needed for the actual source diff.
+
+[`lib/verification-sandbox.mjs`](../lib/verification-sandbox.mjs) isolates application execution from the verifier. The host audits the pristine patch before executing application code. A non-root installer copies the target into a disposable Docker volume and runs `npm ci --ignore-scripts`. Tests run in a separate non-root container with that volume read-only, no external network, and writable temporary storage. Loopback remains available for HTTP tests. Neither container receives runner credentials, the Docker socket, the hub, context, patch, or receipt. Installation has network access for package downloads. The image is pinned by digest in `config/tool-versions.json`; resource limits and timeouts bound execution. An all-skipped test run is rejected.
+
+This isolation was added after the first successful live remediation. The [adversarial review](adversarial-review.md) records the reproduced gaps, fixes, validation, and remaining limits.
 
 The current model variable is `CODEX_MODEL=gpt-6-luna`; the CLI is pinned to `0.163.0`. The [permission profile](../config/codex.toml) restricts filesystem/network access, and the Action uses `drop-sudo`. All four remediation jobs use `ubuntu-24.04`. The pinned Action failed its system-socket protection check on Ubuntu 26.04 in [this run](https://github.com/vc4u2c/github-action-codex/actions/runs/40802770824); pinning the OS allowed the existing protection to complete.
 
@@ -150,7 +154,7 @@ Snapshot as of **October 28, 2026 (America/Chicago)**:
 
 Five existing lodash advisories remain in the proposed tree. Codex's report records two HTTP-test socket failures in the propose environment; the independent verifier and application CI passed those unchanged tests. The report and verification receipt preserve both results.
 
-The hub also has tests for finding recurrence, failed scans, duplicate detection, issue pagination, target isolation, skill evidence, reset behavior, and real Git patch rejection. Run them with `npm test`.
+The hub also has tests for finding recurrence, failed scans, duplicate detection, issue pagination, target isolation, skill evidence, reset behavior, real Git patch rejection, and all-skipped test rejection. Run them with `npm test`. Hub CI additionally runs Docker isolation tests that attempt to alter audit inputs and access host evidence/credentials. The Docker tests are opt-in locally; see the [review validation commands](adversarial-review.md#repeat-the-checks).
 
 ## Supported scope and extension points
 
@@ -165,4 +169,6 @@ The hub also has tests for finding recurrence, failed scans, duplicate detection
 
 The shared concurrency group prevents concurrent register writes, but GitHub may replace an older pending run with a newer one. Scheduled reconciliation provides recovery for this demo; it is not a durable job queue.
 
-Tool versions are recorded in [`config/tool-versions.json`](../config/tool-versions.json). [`scripts/pin-actions.mjs`](../scripts/pin-actions.mjs) deliberately refreshes Action commit pins and the Codex CLI version; review and validate those changes when upgrading, rather than running it during routine setup.
+The verification contract currently requires Linux containers and tests that write scratch files under the system temporary directory. Tests cannot write the application checkout or contact external services. GitHub-hosted remediation runners provide Docker; local `verify-demo.mjs` requires a running Docker engine with Linux containers. The ordinary dashboard rehearsal does not require Docker.
+
+Tool versions are recorded in [`config/tool-versions.json`](../config/tool-versions.json). [`scripts/pin-actions.mjs`](../scripts/pin-actions.mjs) deliberately refreshes Action commit pins and the Codex CLI version; review and validate those changes when upgrading, rather than running it during routine setup. That script preserves the verification image pin; update and validate the image digest separately.

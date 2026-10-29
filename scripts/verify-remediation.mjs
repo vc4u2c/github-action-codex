@@ -3,20 +3,19 @@ import { resolve } from 'node:path';
 import { loadTargets } from '../lib/config.mjs';
 import { applyProposal, assertContext, assertRemediated } from '../lib/remediation.mjs';
 import { auditLocal } from '../lib/audit.mjs';
-import { npmCommand, run } from '../lib/process.mjs';
+import { runApplicationTests, assertTestsPassed, printTestOutput, verificationImage } from '../lib/verification-sandbox.mjs';
 const context = JSON.parse(await readFile(process.argv[2], 'utf8'));
 assertContext(context, await loadTargets());
 const checkout = resolve(process.argv[3]), patch = process.argv[4], receipt = process.argv[5];
 const checked = await applyProposal(context, checkout, patch);
 const directory = resolve(checkout, context.target.directory);
-const [command, args] = npmCommand(['ci', '--ignore-scripts', '--no-audit', '--no-fund']);
-const installed = await run(command, args, { cwd: directory });
-if (installed.code !== 0) throw new Error('npm ci failed: ' + installed.stderr);
-const tests = await run(process.execPath, ['--test', '--test-reporter=tap'], { cwd: directory });
-console.log(tests.stdout);
-if (tests.code !== 0 || !/# tests [1-9][0-9]*/.test(tests.stdout)) throw new Error('Application tests failed or no tests executed');
+// Audit the pristine proposal before executing any application code. Tests receive a
+// disposable copy; they cannot rewrite the manifests, harness, or verification receipt.
 const audit = await auditLocal(directory, context.target);
 assertRemediated(context, audit.findings);
+const tests = await runApplicationTests(checkout, context.target.directory);
+printTestOutput(tests);
+assertTestsPassed(tests);
 await writeFile(receipt, JSON.stringify({ ...checked, baseSha: context.sha, findingKey: context.finding.key,
-  verifiedAt: new Date().toISOString(), remainingFindings: audit.findings.length }, null, 2));
+  verifiedAt: new Date().toISOString(), remainingFindings: audit.findings.length, verificationImage }, null, 2));
 console.log('Verified: tests pass, selected finding removed, no new advisory keys');

@@ -12,6 +12,7 @@ A working demo of a central repository that finds dependency vulnerabilities in 
 | [Setup](docs/setup.md) | How to reproduce the installation, with commands and checkpoints |
 | [Implementation](docs/implementation-guide.md) | What was built, how the code works, credentials, and verified run evidence |
 | [Demo runbook](docs/demo-runbook.md) | How to scan, fix, merge, verify closure, and reset for another demo |
+| [Adversarial review](docs/adversarial-review.md) | Reproduced verification gaps, fixes, regression checks, and remaining limits |
 
 ## How it works
 

@@ -10,5 +10,6 @@
     "actions/deploy-pages@v4": "d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e",
     "actions/download-artifact@v4": "d3f86a106a0bac45b974a628896c90dbdf5c8093",
     "openai/codex-action@v1": "bdf19a4a223ec2549a3e2274a0cf61556bc07675"
-  }
+  },
+  "verificationImage": "node:22-bookworm-slim@sha256:9f0dde62d10e7ff7a310ecaebd66225f6b46c17e6cb778449a77b05d3541bea2"
 }

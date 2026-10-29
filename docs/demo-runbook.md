@@ -64,7 +64,7 @@ On Windows PowerShell, use `npm.cmd` if needed. The commands use `.work/demo-tar
 
 `demo:fix` performs a scripted upgrade for rehearsal. The GitHub remediation workflow demonstrates the actual Codex agent. Advisory counts and severity come from the live npm database and may change.
 
-To scan the sibling checkout explicitly, use `npm run demo -- ../vulnerable-node-demo`. For additional local verification of the patch gate, run `node scripts/verify-demo.mjs`; evidence is written to `artifacts/integration-verification.json`.
+To scan the sibling checkout explicitly, use `npm run demo -- ../vulnerable-node-demo`. With a running Docker engine using Linux containers, run `node scripts/verify-demo.mjs`; evidence is written to `artifacts/integration-verification.json`.
 
 ## Runner compatibility
 

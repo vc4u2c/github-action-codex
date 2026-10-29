@@ -28,5 +28,6 @@ let remediation = await readFile(files[2], 'utf8');
 if (/          codex-version:/.test(remediation)) remediation = remediation.replace(/          codex-version: .*/, "          codex-version: '" + version + "'");
 else remediation = remediation.replace('          permission-profile: remediation', "          codex-version: '" + version + "'\n          permission-profile: remediation");
 await writeFile(files[2], remediation);
-await writeFile('config/tool-versions.json', JSON.stringify({ resolvedAt: new Date().toISOString(), codex: version, actions: Object.fromEntries(pins) }, null, 2) + '\n');
+const existingVersions = JSON.parse(await readFile('config/tool-versions.json', 'utf8'));
+await writeFile('config/tool-versions.json', JSON.stringify({ ...existingVersions, resolvedAt: new Date().toISOString(), codex: version, actions: Object.fromEntries(pins) }, null, 2) + '\n');
 console.log('Pinned ' + pins.size + ' action references and Codex CLI ' + version);

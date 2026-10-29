@@ -17,7 +17,7 @@ These steps reproduce the two-repository installation. The existing `vc4u2c` dem
 
 ## 1. Prepare a new workspace
 
-You need Git, Node.js 22 or newer, the GitHub CLI (`gh`), and permission to create repositories and install GitHub Apps under the chosen account. Remediation also needs an OpenAI API project key with available API quota. Scanning and reset do not call OpenAI.
+You need Git, Node.js 22 or newer, the GitHub CLI (`gh`), and permission to create repositories and install GitHub Apps under the chosen account. Remediation also needs an OpenAI API project key with available API quota. Scanning and reset do not call OpenAI. GitHub-hosted remediation runners use Docker to isolate application verification. A local Docker engine with Linux containers is needed only if you run `verify-demo.mjs` or the container regression checks locally.
 
 The commands below use **PowerShell**. Keep the same terminal open so the variables remain available. Replace `YOUR_GITHUB_USER_OR_ORG` with the owner of your new repositories. This example keeps the two repository names shown below; choose an account where those names are available.
 
