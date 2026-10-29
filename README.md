@@ -60,4 +60,4 @@ This rehearsal uses a real npm audit and a scripted dependency update in `.work/
 
 The implementation scans known npm dependency advisories. It supports multiple configured repositories under one GitHub App installation owner. Cloud resources, containers, application-code scanning, and automatic merging are outside the current implementation.
 
-The application is intentionally vulnerable and runs locally. Publishing its source does not require deploying the application. See the [implementation guide](docs/implementation-guide.md#supported-scope-and-extension-points) before adapting the demo to other applications.
+The application includes an intentionally vulnerable baseline for repeatable resets and runs locally. The current demo main branch has both fixes merged; the dashboard shows the verified resolutions. Publishing its source does not require deploying the application. See the [implementation guide](docs/implementation-guide.md#supported-scope-and-extension-points) before adapting the demo to other applications.

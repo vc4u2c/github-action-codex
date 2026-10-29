@@ -4,11 +4,13 @@
 
 Use the same repositories and register for every demonstration. Setup is already complete for the `vc4u2c` demo.
 
-## Start with the current open PR
+## Current demo state
 
-[Application PR #1](https://github.com/vc4u2c/vulnerable-node-demo/pull/1) is intentionally being kept open for the demo. It contains the Luna-generated minimist fix, passing checks, and links to the run. [Issue #6](https://github.com/vc4u2c/github-action-codex/issues/6) and the [dashboard](https://vc4u2c.github.io/github-action-codex/) show `pr-open`.
+[Application PR #1](https://github.com/vc4u2c/vulnerable-node-demo/pull/1) (minimist) and [PR #2](https://github.com/vc4u2c/vulnerable-node-demo/pull/2) (lodash) are merged. The application's main branch uses minimist 1.2.8 and lodash 4.18.1. The automatic post-merge scan closed all six register issues; the dashboard shows six resolved findings and zero active findings.
 
-You can demonstrate the register, skill logs, verification, and PR review without merging. Re-running remediation for this finding reuses the existing PR and skips another Codex proposal. To show the agent working, open the [completed run](https://github.com/vc4u2c/github-action-codex/actions/runs/40803030409).
+You can demonstrate the completed lifecycle using the merged PRs, [Codex run](https://github.com/vc4u2c/github-action-codex/actions/runs/40811457297), and [automatic closing scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40812486604). To demonstrate a new live fix, use [Reset for the next demo](#reset-for-the-next-demo) first. Reset deliberately reintroduces the vulnerable baseline through a reviewable PR.
+
+Routine hub edits are committed and pushed directly. The remediation automation continues to create application PRs for review; it never merges them itself. Merge appropriate fixes after reviewing the diff and passing checks.
 
 ## Request a fix from the register
 
@@ -19,7 +21,7 @@ You can demonstrate the register, skill logs, verification, and PR review withou
 
 Alternatively, open **Register #N** and tick **Request a Codex fix** on the issue. The checkbox requests a run; it does not merge a PR or resolve the finding. A scan may reset the checkbox, so use the Actions run to check progress. Ordinary issue edits and unticking the box do not request a fix; unticking also does not cancel a running job. If a run fails, use Actions to rerun it or clear and tick the box again. Manual **Run workflow** with the issue number remains available.
 
-Public visitors can browse findings. Only a maintainer with write access can start remediation. Findings with an open PR show **Review PR** instead of **Request fix**. For this presentation, keep minimist PR #1 open and show its completed run; choosing another open finding can start a new paid Codex run.
+Public visitors can browse findings. Only a maintainer with write access can start remediation. Findings with an open PR show **Review PR** instead of **Request fix**. Requesting a new fix can start a paid Codex run; viewing completed runs does not.
 
 ## Present the GitHub workflow
 
@@ -32,7 +34,7 @@ Public visitors can browse findings. Only a maintainer with write access can sta
 | 5. Merge when ready | Review and merge the PR | Default-branch CI and the separate `notify-hub` job |
 | 6. Verify closure | Wait for the hub's requested scan and Pages deployment | Issue closes only after the advisory is confirmed absent; dashboard shows resolved |
 
-**Stop after step 4 to preserve the open PR for presentation.** Scanning while the PR remains open does not merge it or mark its finding resolved.
+You can pause after step 4 if you want to keep a future PR open for a presentation. Otherwise, continue through merge and verification. Scanning while a PR remains open does not merge it or mark its finding resolved.
 
 If notification is unavailable, run **Scan and reconcile register** manually after merge. Other existing advisories can remain open; the demo fix targets one selected finding.
 
@@ -44,7 +46,7 @@ The run artifacts preserve the exact instructions, context, Codex report, patch,
 
 ## Reset for the next demo
 
-Complete or close open remediation PRs before resetting. Leave PR #1 open until you are ready to finish the current presentation.
+Complete or close open remediation PRs before resetting. Both original fix PRs are now merged, so the demo is ready for a reset when you choose to start another cycle.
 
 1. In the hub, run **Reset demo** on main with `target_id=node-demo`.
 2. Review the reset PR in the application repository and merge it.

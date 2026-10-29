@@ -38,7 +38,7 @@ The new sandbox uses a digest-pinned Node image, non-root application processes,
 - Containers share the host kernel. This demo uses temporary GitHub-hosted runners; it is not a sandbox for arbitrary hostile multi-tenant workloads. Dependency installation has external network access, and no private-registry credentials are supplied.
 - The skill's completed read command and hash are inspectable in the logs. The pipeline does not attest that a model followed every instruction.
 - A shared Actions concurrency group serializes register writers but is not a durable queue. Scheduled scans recover missed notifications; GitHub and registry failures can delay updates.
-- The live merge/automatic closure/reset sequence remains pending because [application PR #1](https://github.com/vc4u2c/vulnerable-node-demo/pull/1) is intentionally open for the presentation. Local lifecycle tests are separate evidence.
+- Both fix PRs have since merged, and the notifier-triggered [post-merge scan](https://github.com/vc4u2c/github-action-codex/actions/runs/40812486604) closed all six register findings. The live reset/reopen cycle remains unexercised; local lifecycle tests are separate evidence.
 
 ## Where `no-mistakes` fits
 
