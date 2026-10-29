@@ -20,10 +20,10 @@ export function progressFor(finding, findings, runs) {
   if (!run) return {label:finding.status==='awaiting-verification'?'Verifying merge':'Not requested',kind:'open'};
   if (run.status!=='completed') {
     const job=run.jobs?.find(j=>j.status==='in_progress');
-    return {label:run.status==='in_progress'?'Running':'Requested / queued',kind:'running',detail:job ? job.name+(job.step?' ? '+job.step:'') : '',run};
+    return {label:run.status==='in_progress'?'Running':'Requested / queued',kind:'running',detail:job ? job.name+(job.step?' · '+job.step:'') : '',run};
   }
   if (run.conclusion==='success') return {label:'Refreshing register',kind:'running',run};
   const failed=run.jobs?.find(j=>['failure','timed_out','cancelled','action_required'].includes(j.conclusion));
   return {label:run.conclusion==='cancelled'?'Cancelled':'Failed',kind:'failed',
-    detail:failed ? failed.name+' ? '+(failed.step || failed.conclusion) : (run.conclusion || 'Open the run for details'),run};
+    detail:failed ? failed.name+' · '+(failed.step || failed.conclusion) : (run.conclusion || 'Open the run for details'),run};
 }

@@ -1,6 +1,6 @@
 # Repeatable demo runbook
 
-[Five-minute presentation card](demo-quickstart.md) ? [Architecture](architecture.md) ? [Setup](setup.md) ? [Implementation and evidence](implementation-guide.md)
+[Five-minute presentation card](demo-quickstart.md) | [Architecture](architecture.md) | [Setup](setup.md) | [Implementation and evidence](implementation-guide.md)
 
 This runbook uses the same two repositories, Apps, and issue identities on every cycle. Routine hub changes go directly to main. The remediation agent always proposes application changes through a PR; review and merge passing fixes. The workflow never merges its own PRs.
 
@@ -47,13 +47,13 @@ gh workflow run remediate.yml --repo $HubRepo --ref main -f "issue_number=$Issue
 
 Alternatively, open a register issue and tick **Request a Codex fix**. The listener verifies the human's write access before dispatching the workflow. The checkbox is a request control, not a completion indicator; unticking it does not cancel a run.
 
-**Checkpoint:** **Fix progress** changes to Requested / queued, then Running. Use **Refresh status** or **View run** to follow prepare ? propose ? verify ? publish. The dashboard reads public Actions status without a browser token; it refreshes on return to the tab and periodically while visible. Private repositories or API rate limits may require viewing progress directly in Actions. Finding resolution and usage come from scan snapshots.
+**Checkpoint:** **Fix progress** changes to Requested / queued, then Running. Use **Refresh status** or **View run** to follow prepare -> propose -> verify -> publish. The dashboard reads public Actions status without a browser token; it refreshes on return to the tab and periodically while visible. Private repositories or API rate limits may require viewing progress directly in Actions. Finding resolution and usage come from scan snapshots.
 
 A fix groups advisories by repository + manifest + package. Selecting another advisory from the same group reuses the open package PR rather than spending another model call. The verifier requires all advisories selected in that package group to disappear; unrelated packages stay for a later request.
 
 ## 4. Show the skill, usage, and independent verification
 
-In **propose ? Run Codex with the remediation skill**, find the completed `read-remediation-skill.mjs` command, exit code 0, and `SKILL_READ name=remediate-vulnerability sha256=...`. Compare the hash with prepare's `SKILL_CONFIGURED`. A skill name appearing in the prompt alone is not execution evidence.
+In **propose -> Run Codex with the remediation skill**, find the completed `read-remediation-skill.mjs` command, exit code 0, and `SKILL_READ name=remediate-vulnerability sha256=...`. Compare the hash with prepare's `SKILL_CONFIGURED`. A skill name appearing in the prompt alone is not execution evidence.
 
 The context artifact contains the exact skill, grouped advisories, audited commit and related issues. The proposal is an untrusted patch. The separate verifier audits the pristine patch, installs with lifecycle scripts disabled, and runs tests in restricted containers before producing its receipt. The publisher uses a separate runner and App token to create the PR.
 
@@ -65,7 +65,7 @@ Confirm the PR links every verified advisory it fixes, changes only expected dep
 
 **Checkpoint:** the application push test and `notify-hub` succeed. The central scan closes only findings absent from the new default-branch audit. A closed-but-unmerged PR or a failed scan cannot resolve a finding. The dashboard's PR count counts distinct PRs, not advisory rows.
 
-Repeat steps 3?5 for the remaining package groups. At the clean ending, the dashboard shows zero active findings and all detected findings resolved. No fix PR should remain open.
+Repeat steps 3-5 for the remaining package groups. At the clean ending, the dashboard shows zero active findings and all detected findings resolved. No fix PR should remain open.
 
 ## 6. Repeat or recover
 
@@ -102,6 +102,6 @@ For the actual independent verifier, with Docker running Linux containers:
 npm.cmd run demo:verify
 ```
 
-This materializes the pinned vulnerable commit in a new private workspace, even when the sibling application's main branch is already fixed. It verifies a minimist patch in containers and checks open ? resolved ? open. Evidence is saved to `artifacts/integration-verification.json`; the sibling checkout is left unchanged.
+This materializes the pinned vulnerable commit in a new private workspace, even when the sibling application's main branch is already fixed. It verifies a minimist patch in containers and checks open -> resolved -> open. Evidence is saved to `artifacts/integration-verification.json`; the sibling checkout is left unchanged.
 
 [Implementation evidence](implementation-guide.md#8-what-has-been-demonstrated) records the actual live cycles. A local rehearsal and a live GitHub cycle are separate evidence.
